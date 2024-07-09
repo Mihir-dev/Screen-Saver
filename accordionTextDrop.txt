@@ -1,0 +1,57 @@
+import { useState } from 'react'
+import { DropdownIcon } from 'src/components/icons/drop_down-icon'
+import '../../../styles/index.css'
+
+interface AccordionTextDropProps {
+	subText: string | number
+	dropDownArray?: string[]
+	dropDownFn?: (item: string) => void
+	lastElement?: boolean
+	subTextClasses?: string
+	ssStyles?: boolean
+}
+
+export const AccordionTextDrop = ({
+	subText,
+	dropDownArray,
+	dropDownFn,
+	lastElement,
+	subTextClasses = '',
+	ssStyles,
+}: AccordionTextDropProps) => {
+	const [dropDownOpened, setDropDownOpened] = useState(false)
+	return (
+		<div
+			tabIndex={0}
+			className={`bg-grey-40 ${ssStyles ? 'py-xxs pr-xxs space-x-xxs rounded-sm pl-[6px] ' : 'py-xs px-base space-x-base rounded-md'}     relative flex items-center  font-medium`}
+			onBlur={() => setDropDownOpened(false)}>
+			<p className={`${ssStyles ? 'text-body-xxs-bold' : 'text-body-s'}`}>
+				{subText}
+			</p>
+			<DropdownIcon
+				width={ssStyles ? '16px' : '24px'}
+				height={ssStyles ? '16px' : '24px'}
+				className={`cursor-pointer transition-all duration-300 ease-in-out ${!dropDownOpened && 'rotate-180  transform'}`}
+				onClick={() => {
+					setDropDownOpened((prev) => !prev)
+				}}
+			/>
+			{dropDownArray && dropDownFn && dropDownOpened && (
+				<div
+					className={`no-scroll-div ${subTextClasses} absolute right-[0] overflow-y-auto ${lastElement ? 'mb-xxs bottom-full' : 'mt-xxs top-full'}  z-30  flex w-full  flex-col overflow-hidden  ${ssStyles ? 'text-body-xxs-bold max-h-[72px] rounded-sm' : 'text-body-s max-h-[150px]  rounded-md'} `}>
+					{dropDownArray?.map((item) => (
+						<div
+							key={item}
+							className={`${ssStyles ? 'p-xxs' : 'p-s'} bg-grey-60 hover:bg-grey-40 text-grey-100 hover:text-orange-60 z-30 cursor-pointer `}
+							onClick={() => {
+								setDropDownOpened(false)
+								dropDownFn(item)
+							}}>
+							{item}
+						</div>
+					))}
+				</div>
+			)}
+		</div>
+	)
+}

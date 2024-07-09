@@ -1,0 +1,86 @@
+import { useRef, useState } from 'react'
+import { DraggingIcon } from 'src/components/icons/dragging_icon'
+import { ImageIcon } from 'src/components/icons/image_icon'
+
+interface ImageTileSSProps {
+	deleteFn?: ({
+		deletePopupState,
+		mediaText,
+		mediaType,
+		mediaName,
+	}: {
+		deletePopupState: boolean
+		mediaText: 'image' | 'link' | 'video'
+		mediaType: 'im' | 'lk' | 'vd'
+		mediaName: string
+	}) => void
+	id: string
+	url: string
+	previewFn: () => void
+
+	dragStart: ({
+		e,
+		url,
+		fileName,
+	}: {
+		e: React.DragEvent
+		url: string
+		fileName: string
+	}) => void
+}
+
+export const ImageTileSS = ({
+	url,
+	previewFn,
+	dragStart,
+	id,
+}: ImageTileSSProps) => {
+	const [dragActive, setDragActive] = useState(false)
+
+	const entireDivRef = useRef<HTMLDivElement>(null)
+
+	const draggingBtnRef = useRef<HTMLDivElement>(null)
+
+	const handleDragStart = (e: React.DragEvent) => {
+		if (entireDivRef.current && draggingBtnRef.current) {
+			const rectDiv = entireDivRef.current.getBoundingClientRect()
+			const rectBtn = draggingBtnRef.current.getBoundingClientRect()
+			const offsetX = rectBtn.left - rectDiv.left + rectBtn.width / 2
+			const offsetY = rectBtn.top - rectDiv.top + rectBtn.height / 2
+
+			e.dataTransfer.setDragImage(entireDivRef.current, offsetX, offsetY)
+			dragStart({ e: e, url: url, fileName: id })
+		}
+	}
+
+	return (
+		<div
+			ref={entireDivRef}
+			className={`group relative z-20 h-[155px] rounded-md transition-all duration-500 ease-in-out ${dragActive ? 'ring-2 ring-orange-50' : ''}`}>
+			<div
+				onClick={previewFn}
+				className="bg-blur-50 relative h-full w-full cursor-pointer rounded-md bg-center transition-all duration-500 ease-in-out group-hover:opacity-60"
+				style={{
+					backgroundImage: `url(${url})`,
+					backgroundSize: 'cover',
+					backgroundRepeat: 'no-repeat',
+				}}>
+				<div className="left-s bottom-s bg-background-100/80 p-xxs absolute  rounded-[200px]">
+					<ImageIcon height="24" width="24" color="white" />
+				</div>
+			</div>
+
+			<div
+				ref={draggingBtnRef}
+				id="dragging-btn"
+				draggable
+				onDragStart={handleDragStart}
+				onMouseUp={() => setDragActive(false)}
+				onMouseDown={() => setDragActive(true)}
+				onMouseLeave={() => setDragActive(false)}
+				className="right-s top-s bg-background-100 p-xs hover:bg-grey-20 active:bg-orange-20 absolute z-20 hidden  cursor-grab rounded-[200px] transition-all duration-150 ease-in-out active:cursor-grabbing  group-hover:block">
+				<DraggingIcon />
+			</div>
+		</div>
+	)
+}

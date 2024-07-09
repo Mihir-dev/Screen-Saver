@@ -1,0 +1,501 @@
+import React, { useState } from 'react'
+import { ImageTileSS } from 'src/components/Dashboard/imageTIleSS'
+import { LinkTileSS } from 'src/components/Dashboard/linkTileSS'
+import { PreviewerDS } from 'src/components/Dashboard/previewerDS'
+import { SequenceTileSS } from 'src/components/Dashboard/sequenceTileSS'
+import { VideoTileSS } from 'src/components/Dashboard/videoTileSS'
+import { DropdownIcon } from 'src/components/icons/drop_down-icon'
+import { ExclamationIcon } from 'src/components/icons/exclamation_icon'
+import { ImageIcon } from 'src/components/icons/image_icon'
+
+export const ScreenSaverAccordion = () => {
+	const [opened, setOpened] = useState(false)
+	const [display, setDisplay] = useState('display1')
+
+	const [defaultScreenSaver, setDefaultScreenSaver] = useState<{
+		fileSize: number
+		fileName: string
+		fileUrl: string
+		fileType: 'image' | 'video' | 'link'
+	}>({
+		fileSize: 1,
+		fileName: '1',
+		fileUrl: '',
+		fileType: 'image',
+	})
+
+	const [sequenceScreenSavers, setSequenceScreenSavers] = useState<
+		{
+			fileSize: number
+			fileName: string
+			fileUrl: string
+			fileType: 'image' | 'video' | 'link'
+		}[]
+	>([])
+
+	const [
+		{ availSSPreviewPopupState, availSSPreviewIndex, availSSPImagePreviewer },
+		setAvailSSPPreviewState,
+	] = useState<{
+		availSSPreviewPopupState: boolean
+		availSSPreviewIndex: number
+		availSSPImagePreviewer: boolean
+	}>({
+		availSSPreviewPopupState: false,
+		availSSPreviewIndex: 0,
+		availSSPImagePreviewer: false,
+	})
+
+	const [
+		{
+			defaultSSPreviewPopupState,
+			defaultSSPreviewIndex,
+			defaultSSPImagePreviewer,
+		},
+		setDefaultSSPPreviewState,
+	] = useState<{
+		defaultSSPreviewPopupState: boolean
+		defaultSSPreviewIndex: number
+		defaultSSPImagePreviewer: boolean
+	}>({
+		defaultSSPreviewPopupState: false,
+		defaultSSPreviewIndex: 0,
+		defaultSSPImagePreviewer: false,
+	})
+
+	const handleOnDrag = (
+		e: React.DragEvent,
+		url: string,
+		fileName: string,
+		fileType: 'image' | 'link' | 'video',
+	) => {
+		e.dataTransfer.setData('fileUrl', url)
+		e.dataTransfer.setData('fileName', fileName)
+		e.dataTransfer.setData('fileType', fileType)
+	}
+
+	const handleOnDropDefault = (e: React.DragEvent) => {
+		const url = e.dataTransfer.getData('fileUrl') as string
+		const fileName = e.dataTransfer.getData('fileName') as string
+		const fileType = e.dataTransfer.getData('fileType') as
+			| 'image'
+			| 'video'
+			| 'link'
+		setDefaultScreenSaver((prevState) => ({
+			...prevState,
+			fileName: fileName,
+			fileUrl: url,
+			fileType: fileType,
+		}))
+	}
+
+	const handleOnDropSequence = (e: React.DragEvent) => {
+		const url = e.dataTransfer.getData('fileUrl') as string
+		const fileName = e.dataTransfer.getData('fileName') as string
+		const fileType = e.dataTransfer.getData('fileType') as
+			| 'image'
+			| 'video'
+			| 'link'
+		setSequenceScreenSavers((prev) => [
+			...prev,
+			{
+				fileSize: 1,
+				fileName: fileName,
+				fileUrl: url,
+				fileType: fileType,
+			},
+		])
+	}
+
+	const handleDragOver = (e: React.DragEvent) => {
+		e.preventDefault()
+	}
+
+	return (
+		<>
+			<div
+				id="Main-Selection-Component"
+				className={`bg-grey-20 px-m font-jiotypemedium rounded-ml  flex-1  overflow-visible text-start transition-all duration-500 ease-in-out ${opened && 'pb-base'}`}>
+				<div
+					id="Component-Heading"
+					className="py-base flex flex-1 items-center justify-between "
+					onClick={() => setOpened((prev) => !prev)}>
+					<p className={` text-body-m-bold ${opened && ' text-[#F7B178]'}`}>
+						Screensaver
+					</p>
+					<div className="">
+						<DropdownIcon
+							className={`cursor-pointer transition-all duration-300 ease-in-out ${!opened && 'rotate-180  transform'}`}
+						/>
+					</div>
+				</div>
+
+				{opened && (
+					<div className="pt-base space-y-base">
+						<div className="py-xxs space-x-xxs text-body-s flex items-center ">
+							<div
+								onClick={() => setDisplay('display1')}
+								className={`py-xs min-w-[208px] cursor-pointer rounded-[1000px] text-center transition-all duration-500  ease-in-out ${display === 'display1' ? 'text-grey-100 bg-orange-50' : 'text-orange-60 bg-transparent'}`}>
+								Display 1
+							</div>
+							<div
+								onClick={() => setDisplay('display2')}
+								className={`py-xs min-w-[208px] cursor-pointer  rounded-[1000px] text-center transition-all duration-500  ease-in-out ${display === 'display2' ? 'text-grey-100 bg-orange-50' : 'text-orange-60 bg-transparent'}`}>
+								Display 2
+							</div>
+						</div>
+						<div className="gap-s grid h-[557px] max-h-[557px] grid-cols-2">
+							<div className="bg-blur-50 rounded-ml py-s space-y-base  h-[557px] max-h-[557px]  ">
+								<p className="text-body-xs-bold px-s">
+									Available screensavers in your device
+								</p>
+
+								<div className="scrollbar-none  max-h-[497px] overflow-auto">
+									<div
+										id="draggble-divs"
+										className="gap-base px-s relative grid grid-cols-2 overflow-hidden py-[2px] ">
+										{imageData.map(({ imageName, imageUrl }, i) => (
+											<ImageTileSS
+												dragStart={({ e, url, fileName }) =>
+													handleOnDrag(e, url, fileName, 'image')
+												}
+												key={imageName}
+												id={imageName.toString()}
+												previewFn={() =>
+													setAvailSSPPreviewState({
+														availSSPreviewPopupState: true,
+														availSSPreviewIndex: i,
+														availSSPImagePreviewer: true,
+													})
+												}
+												deleteFn={() => alert('Delete')}
+												url={imageUrl}
+											/>
+										))}
+										{videoData.map(({ videoName, videoUrl }, i) => (
+											<VideoTileSS
+												dragStart={({ e, url, fileName }) =>
+													handleOnDrag(e, url, fileName, 'video')
+												}
+												key={videoName}
+												id={videoName.toString()}
+												previewFn={() =>
+													setAvailSSPPreviewState({
+														availSSPreviewPopupState: true,
+														availSSPreviewIndex: i,
+														availSSPImagePreviewer: false,
+													})
+												}
+												deleteFn={() => alert('Delete')}
+												url={videoUrl}
+											/>
+										))}
+										{linkData.map(({ linkTitle, linkUrl }) => (
+											<LinkTileSS
+												dragStart={({ e, url, fileName }) =>
+													handleOnDrag(e, url, fileName, 'link')
+												}
+												key={linkUrl}
+												deleteFn={() => alert('Delete')}
+												id={linkTitle}
+												url={linkUrl}
+											/>
+										))}
+									</div>
+								</div>
+							</div>
+							<div className="bg-background-100/80 rounded-ml py-s space-y-base flex h-[557px] max-h-[557px] flex-col">
+								<div className="space-y-base px-s">
+									<p className="text-body-xs-bold">Default screensaver</p>
+									<div className="space-x-base flex">
+										<div
+											id="droppable-zone-1"
+											onDrop={handleOnDropDefault}
+											onDragOver={handleDragOver}
+											className="flex-1">
+											{defaultScreenSaver.fileUrl.length > 0 ? (
+												<>
+													{defaultScreenSaver.fileType === 'image' && (
+														<ImageTileSS
+															dragStart={({ e, url, fileName }) =>
+																handleOnDrag(e, url, fileName, 'image')
+															}
+															id="default-screenSaver"
+															previewFn={() =>
+																setDefaultSSPPreviewState({
+																	defaultSSPreviewPopupState: true,
+																	defaultSSPreviewIndex: 0,
+																	defaultSSPImagePreviewer: true,
+																})
+															}
+															deleteFn={() => alert('Delete')}
+															url={defaultScreenSaver.fileUrl}
+														/>
+													)}
+
+													{defaultScreenSaver.fileType === 'video' && (
+														<VideoTileSS
+															dragStart={({ e, url, fileName }) =>
+																handleOnDrag(e, url, fileName, 'video')
+															}
+															id="default-screenSaver"
+															previewFn={() =>
+																setDefaultSSPPreviewState({
+																	defaultSSPreviewPopupState: true,
+																	defaultSSPreviewIndex: 0,
+																	defaultSSPImagePreviewer: false,
+																})
+															}
+															deleteFn={() => alert('Delete')}
+															url={defaultScreenSaver.fileUrl}
+														/>
+													)}
+
+													{defaultScreenSaver.fileType === 'link' && (
+														<LinkTileSS
+															dragStart={({ e, url, fileName }) =>
+																handleOnDrag(e, url, fileName, 'video')
+															}
+															id="default-screenSaver"
+															deleteFn={() => alert('Delete')}
+															url={defaultScreenSaver.fileUrl}
+														/>
+													)}
+												</>
+											) : (
+												<div className="bg-grey-20 flex h-full min-h-[155px] w-full items-center justify-center rounded-md">
+													<div className="space-y-xs flex flex-col items-center">
+														<ImageIcon height="24" width="24" color="#5A5A5A" />
+														<p className="text-grey-60 text-body-xxs">
+															No default image added
+														</p>
+													</div>
+												</div>
+											)}
+										</div>
+
+										<div className="space-x-xs flex flex-1">
+											<div className="mt-[2px]">
+												<ExclamationIcon />
+											</div>
+											<div className="space-y-xs ">
+												<p className="text-body-xxs text-grey-80">
+													If no screensaver is configured, the default display
+													will be shown. When the scheduled duration for Display
+													1 or Display 2 has elapsed, the system will switch
+													back to the default display.
+												</p>
+												<p className="text-body-xxs text-grey-60">
+													Drag & Drop Image, Video or Link from available
+													screensavers
+												</p>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div className="px-s w-full">
+									<div className="h-xxs bg-grey-20  w-full shrink-0" />
+								</div>
+
+								<div className="space-y-base flex flex-1 flex-col">
+									<p className="text-body-xs-bold text-grey-80 px-s">
+										Screensaver sequence & duration
+									</p>
+									<div
+										onDrop={handleOnDropSequence}
+										onDragOver={handleDragOver}
+										className="scrollbar-thin ml-s mr-xxs  pr-xxs scrollbar-thumb-rounded-pill scrollbar-thumb-grey-100/[0.15] max-h-[270px] flex-1 overflow-y-auto overflow-x-hidden ">
+										{sequenceScreenSavers.length > 0 ? (
+											<div className="gap-base grid grid-cols-2 p-[2px]">
+												{sequenceScreenSavers.map((fileData, i) => (
+													<SequenceTileSS
+														fileData={fileData}
+														key={i}
+														sequenceNo={i}
+													/>
+												))}
+											</div>
+										) : (
+											<div className="flex h-full w-full items-center justify-center">
+												<p className="text-body-xxs text-grey-60">
+													Drag & Drop Image, Video or Link from available
+													screensavers
+												</p>
+											</div>
+										)}
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
+			</div>
+			{availSSPreviewPopupState && (
+				<PreviewerDS
+					previewIndex={availSSPreviewIndex}
+					imagePreviewer={availSSPImagePreviewer}
+					closeFn={() =>
+						setAvailSSPPreviewState({
+							availSSPreviewPopupState: false,
+							availSSPreviewIndex: 0,
+							availSSPImagePreviewer: true,
+						})
+					}
+					imageList={imageData}
+					videoList={videoData}
+				/>
+			)}
+			{defaultSSPreviewPopupState && (
+				<PreviewerDS
+					previewIndex={defaultSSPreviewIndex}
+					imagePreviewer={defaultSSPImagePreviewer}
+					closeFn={() =>
+						setDefaultSSPPreviewState({
+							defaultSSPreviewPopupState: false,
+							defaultSSPreviewIndex: 0,
+							defaultSSPImagePreviewer: true,
+						})
+					}
+					imageList={
+						defaultSSPImagePreviewer
+							? [
+									{
+										fileSize: defaultScreenSaver.fileSize,
+										imageName: defaultScreenSaver.fileName,
+										imageUrl: defaultScreenSaver.fileUrl,
+									},
+								]
+							: []
+					}
+					videoList={
+						defaultSSPImagePreviewer
+							? []
+							: [
+									{
+										fileSize: defaultScreenSaver.fileSize,
+										videoName: defaultScreenSaver.fileName,
+										videoUrl: defaultScreenSaver.fileUrl,
+									},
+								]
+					}
+				/>
+			)}
+		</>
+	)
+}
+
+interface MediaImageData {
+	fileSize: number
+	imageName: string
+	imageUrl: string
+}
+
+interface MediaVideoData {
+	fileSize: number
+	videoName: string
+	videoUrl: string
+}
+
+interface MediaLinkData {
+	linkTitle: string
+	linkUrl: string
+}
+
+const imageData: MediaImageData[] = [
+	{
+		fileSize: 1,
+		imageName: '1',
+		imageUrl:
+			'https://images.unsplash.com/photo-1719701110700-786ded92c755?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90b3MtZmVlZHwxfHx8ZW58MHx8fHx8',
+	},
+	{
+		fileSize: 2,
+		imageName: '2',
+		imageUrl:
+			'https://images.unsplash.com/photo-1719412653974-b5a5d4b49b07?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDV8NnNNVmpUTFNrZVF8fGVufDB8fHx8fA%3D%3D',
+	},
+	{
+		fileSize: 3,
+		imageName: '3',
+		imageUrl:
+			'https://images.unsplash.com/photo-1718938610048-843cfecefef6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90b3MtZmVlZHw1fHx8ZW58MHx8fHx8',
+	},
+	{
+		fileSize: 4,
+		imageName: '4',
+		imageUrl:
+			'https://images.unsplash.com/photo-1719515853811-1dc2cf112e24?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90b3MtZmVlZHw5fHx8ZW58MHx8fHx8',
+	},
+	{
+		fileSize: 5,
+		imageName: '5',
+		imageUrl:
+			'https://images.unsplash.com/photo-1718879329786-559f88f2279d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90b3MtZmVlZHwxMnx8fGVufDB8fHx8fA%3D%3D',
+	},
+	{
+		fileSize: 6,
+		imageName: '6',
+		imageUrl:
+			'https://images.unsplash.com/photo-1538169204832-1b461add30a5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDZ8NnNNVmpUTFNrZVF8fGVufDB8fHx8fA%3D%3D',
+	},
+	{
+		fileSize: 7,
+		imageName: '7',
+		imageUrl:
+			'https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDEwfDZzTVZqVExTa2VRfHxlbnwwfHx8fHw%3D',
+	},
+	{
+		fileSize: 8,
+		imageName: '8',
+		imageUrl:
+			'https://images.unsplash.com/photo-1506815444479-bfdb1e96c566?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDExfDZzTVZqVExTa2VRfHxlbnwwfHx8fHw%3D',
+	},
+	{
+		fileSize: 9,
+		imageName: '9',
+		imageUrl:
+			'https://images.unsplash.com/photo-1471079502516-250c19af6928?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE2fDZzTVZqVExTa2VRfHxlbnwwfHx8fHw%3D',
+	},
+	{
+		fileSize: 10,
+		imageName: '10',
+		imageUrl:
+			'https://images.unsplash.com/photo-1452570053594-1b985d6ea890?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE1fDZzTVZqVExTa2VRfHxlbnwwfHx8fHw%3D',
+	},
+]
+
+const videoData: MediaVideoData[] = [
+	{
+		videoName: '9OwiYoUitf2db15f110301720002315222',
+		videoUrl:
+			'https://storage.googleapis.com/jio-events-meet-public-le/stage1/t-e21b36cd-6935-4dae-8fd6-02cdd152fe1d/signageVideos/9OwiYoUitf2db15f110301720002315222.mp4?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=jio-events-meet-public-le%40jio-jiomeet.iam.gserviceaccount.com%2F20240704%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240704T070230Z&X-Goog-Expires=300&X-Goog-SignedHeaders=host&X-Goog-Signature=38b40fed8c691e9991ffabd4aa56d01e46ea685fc94409813aabefa0d2387b55abc3cedc3b2607e7275342608bad6c5b321ec094ff12b7859d39beb9343b32822abc01e7536a5ccb29ab39891b1620ae30a5ed4cc7ae9ef646d8f77afb71e1f13d934b169c560f50247594d76a4b6852660fb2e7c06a2afe34b4e6dd80203afd70b040a23684d507951c3d1d18b82afc2ed485146fa2043128e588fbb9d673525f99b3d7648e276f7ff7d774034ce7a3e78fdaf083cadfd051b037b3c58c8b6184c3abc87e68c2e5afcfd3d82ae0c7f826c33cf3ab6c4b0a7d9039c2757ec55a7913fe157831dce24d739d17e2f13269911a664cadcda658b5bb421ec7948075',
+		fileSize: 3075364,
+	},
+	{
+		videoName: 'PGNtNrHwde4911b0917971720003717272',
+		videoUrl:
+			'https://storage.googleapis.com/jio-events-meet-public-le/stage1/t-e21b36cd-6935-4dae-8fd6-02cdd152fe1d/signageVideos/PGNtNrHwde4911b0917971720003717272.mp4?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=jio-events-meet-public-le%40jio-jiomeet.iam.gserviceaccount.com%2F20240704%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240704T070230Z&X-Goog-Expires=300&X-Goog-SignedHeaders=host&X-Goog-Signature=74175ecf986d9aef5389aa4f86b1f737cf98764aad4fd903978148581a800ea509ff0f4228db4bb60585575e3eb3acb81f4fdac44f7634c8c5b1019c4703629f22d26cbdda9406d349abdd76421a7f824914aef7e2ebbb20f30909b65cdc1e4b8fcb936130bf6decdc9b66018f1f21ad0c97d2d38fb32cf89e0ebbcc747f10e270ac288b1c1d5ab21c4069ce3527e63cc53ca43d6aac13aa951787464ddb8b29815773b9df167870bda26c455aac5da0b16876723edba9f4f8bedece8917c563fd3889384b88856a462a805b16d578a415862f7d66d13d99b2409a9a59629e095edfdeeee7f4b484d6d0e981e8c04be96b7a623003c4afd1eb38710880941bbd',
+		fileSize: 1005843,
+	},
+	{
+		videoName: 'CDGDWOV3h7e0140760a0b1720007936560',
+		videoUrl:
+			'https://storage.googleapis.com/jio-events-meet-public-le/stage1/t-e21b36cd-6935-4dae-8fd6-02cdd152fe1d/signageVideos/CDGDWOV3h7e0140760a0b1720007936560.mp4?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=jio-events-meet-public-le%40jio-jiomeet.iam.gserviceaccount.com%2F20240704%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240704T070230Z&X-Goog-Expires=300&X-Goog-SignedHeaders=host&X-Goog-Signature=53ca6f69073c255c78dd67400c3141777c1a026916889616ca68902cd89c40da6247e1737b94aeaa1a9d6a7c6e444070e257242d3cf8f3ff423bc85bd489f6f5a032e60e0c375f0fac696dd217364df612942d42502057908280a93fac2787626072518084f9c7cfdc1301cbb573dc712790288c2326543545bba5d2407c57b7dd35d747db5816155ab49fd2538c36c40249b17575e14043a1df77865afbeb0b9b18753d137cac5a43393045b3d404e0137d009d9cb2c5813181dd4c80ce1b7829488b1696db20f69cf96e19574a1f292c3c9b885beca2505a239cefcd99d71867cf7c2b8655c4be356965ef1a80c2d992953d4bd2553660d80a2934f2166ded',
+		fileSize: 722795,
+	},
+]
+
+const linkData: MediaLinkData[] = [
+	{
+		linkTitle: 'Google',
+		linkUrl: 'www.google.com',
+	},
+	{
+		linkTitle: 'Facebook',
+		linkUrl: 'www.facebook.com',
+	},
+	{
+		linkTitle: 'Apple',
+		linkUrl: 'www.apple.com',
+	},
+]

@@ -1,0 +1,223 @@
+import { useRef, useState } from 'react'
+import { AccordionTextDrop } from 'src/components/Dashboard/accordionTextDrop'
+import { ImageTileSS } from 'src/components/Dashboard/imageTIleSS'
+import { LinkTileSS } from 'src/components/Dashboard/linkTileSS'
+import { VideoTileSS } from 'src/components/Dashboard/videoTileSS'
+import { DropdownIcon } from 'src/components/icons/drop_down-icon'
+
+interface fileInterface {
+	fileSize: number
+	fileName: string
+	fileUrl: string
+	fileType: 'image' | 'video' | 'link'
+}
+
+export const SequenceTileSS = ({
+	fileData,
+	sequenceNo,
+}: {
+	fileData: fileInterface
+	sequenceNo: number
+}) => {
+	const timeArray = [
+		'00:00',
+		'01:00',
+		'02:00',
+		'03:00',
+		'04:00',
+		'05:00',
+		'06:00',
+		'07:00',
+		'08:00',
+		'09:00',
+		'10:00',
+		'11:00',
+		'12:00',
+		'13:00',
+		'14:00',
+		'15:00',
+		'16:00',
+		'17:00',
+		'18:00',
+		'19:00',
+		'20:00',
+		'21:00',
+		'22:00',
+		'23:00',
+	]
+
+	const [startTime, setStartTime] = useState('00:00')
+	const [endTime, setEndTime] = useState('00:00')
+
+	const today = new Date()
+
+	const startDateRef = useRef<HTMLInputElement | null>(null)
+	const [startDate, setStartDate] = useState(
+		today.toISOString().split('T')[0] || '2024-05-20',
+	)
+	const [isStartDatePickerOpen, setIsStartDatePickerOpen] =
+		useState<boolean>(false)
+
+	const endDateRef = useRef<HTMLInputElement | null>(null)
+	const [endDate, setEndDate] = useState(
+		today.toISOString().split('T')[0] || '2024-05-20',
+	)
+	const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState<boolean>(false)
+
+	const handleStartDatePickerChange = () => {
+		if (startDateRef.current) {
+			setIsStartDatePickerOpen((prev) => !prev)
+			if (!isStartDatePickerOpen) {
+				startDateRef.current.showPicker()
+			}
+		}
+	}
+
+	const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setStartDate(e.target.value)
+		setIsStartDatePickerOpen(false)
+	}
+
+	const handleEndDatePickerChange = () => {
+		if (endDateRef.current) {
+			setIsEndDatePickerOpen((prev) => !prev)
+			if (!isEndDatePickerOpen) {
+				endDateRef.current.showPicker()
+			}
+		}
+	}
+
+	const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setEndDate(e.target.value)
+		setIsEndDatePickerOpen(false)
+	}
+
+	const formatDate = (date: string): string => {
+		const options: Intl.DateTimeFormatOptions = {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+		}
+		const formattedDate = new Date(date).toLocaleDateString('en-US', options)
+		const [month, day, year] = formattedDate.split(' ')
+
+		if (month && day && year) {
+			return `${month.slice(0, 3)} ${day.replace(',', '')}, ${year}`
+		}
+
+		return formattedDate
+	}
+
+	return (
+		<div id="rs-tile" className="space-y-xxs">
+			{fileData.fileType === 'image' && (
+				<ImageTileSS
+					dragStart={({ url }) => alert(url)}
+					id="1"
+					previewFn={() => alert('lol')}
+					deleteFn={() => alert('Delete')}
+					url={fileData.fileUrl}
+				/>
+			)}
+
+			{fileData.fileType === 'video' && (
+				<VideoTileSS
+					dragStart={({ url }) => alert(url)}
+					id="2"
+					previewFn={() => alert('lol')}
+					deleteFn={() => alert('Delete')}
+					url={fileData.fileUrl}
+				/>
+			)}
+
+			{fileData.fileType === 'link' && (
+				<LinkTileSS
+					dragStart={({ url }) => alert(url)}
+					id={fileData.fileName}
+					deleteFn={() => alert('delete')}
+					url={fileData.fileUrl}
+				/>
+			)}
+
+			<div className="flex items-stretch space-x-[2px] overflow-visible rounded-sm">
+				<div className="bg-blur-50 flex flex-shrink-0  grow-0 basis-[29px] flex-col items-stretch justify-center rounded-l-sm">
+					<p className="text-heading-xxs text-center">{sequenceNo + 1}</p>
+				</div>
+				<div className="flex w-[216px] flex-1 flex-col space-y-[2px]">
+					<div className="pl-xs pr-xxs py-xxs bg-blur-50 flex items-center justify-between rounded-r">
+						<p className="text-body-xxs text-grey-80">Start</p>
+						<div className="space-x-xs flex items-center">
+							<div className="py-xxs pr-xxs  bg-grey-40 relative flex items-center rounded-sm pl-[6px]">
+								<p className="text-grey-100 text-body-xxs-bold">
+									{formatDate(startDate)}
+								</p>
+								<div
+									className="ml-xxs"
+									tabIndex={0}
+									onBlur={() => setIsStartDatePickerOpen(false)}>
+									<DropdownIcon
+										className={`cursor-pointer ${isStartDatePickerOpen ? '' : 'rotate-180'}  transition-all duration-500 ease-in-out`}
+										width="16px"
+										height="16px"
+										onClick={handleStartDatePickerChange}
+									/>
+								</div>
+
+								<input
+									ref={startDateRef}
+									className="pointer-events-none  absolute inset-[0] h-full w-full opacity-0"
+									type="date"
+									value={startDate}
+									onChange={handleStartDateChange}
+									onBlur={(e) => e.preventDefault()}
+								/>
+							</div>
+							<AccordionTextDrop
+								dropDownFn={(date) => setStartTime(date)}
+								dropDownArray={timeArray}
+								ssStyles
+								subText={startTime}
+							/>
+						</div>
+					</div>
+					<div className="pl-xs pr-xxs py-xxs bg-blur-50 flex items-center justify-between rounded-r">
+						<p className="text-body-xxs text-grey-80">End</p>
+						<div className="space-x-xs flex items-center">
+							<div className="py-xxs pr-xxs  bg-grey-40 relative flex items-center rounded-sm pl-[6px]">
+								<p className="text-grey-100 text-body-xxs-bold">
+									{formatDate(endDate)}
+								</p>
+								<div
+									className="ml-xxs"
+									tabIndex={0}
+									onBlur={() => setIsEndDatePickerOpen(false)}>
+									<DropdownIcon
+										className={`cursor-pointer ${isEndDatePickerOpen ? '' : 'rotate-180'}  transition-all duration-500 ease-in-out`}
+										width="16px"
+										height="16px"
+										onClick={handleEndDatePickerChange}
+									/>
+								</div>
+
+								<input
+									ref={endDateRef}
+									className="pointer-events-none  absolute inset-[0] h-full w-full opacity-0"
+									type="date"
+									value={endDate}
+									onChange={handleEndDateChange}
+									onBlur={(e) => e.preventDefault()}
+								/>
+							</div>
+							<AccordionTextDrop
+								dropDownFn={(date) => setEndTime(date)}
+								dropDownArray={timeArray}
+								ssStyles
+								subText={endTime}
+							/>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}

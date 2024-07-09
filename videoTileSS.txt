@@ -1,0 +1,85 @@
+import { useRef, useState } from 'react'
+import { DraggingIcon } from 'src/components/icons/dragging_icon'
+import { YtVideoIcon } from 'src/components/icons/video_icon'
+
+interface VideoTileSSProps {
+	deleteFn?: ({
+		deletePopupState,
+		mediaText,
+		mediaType,
+		mediaName,
+	}: {
+		deletePopupState: boolean
+		mediaText: 'image' | 'link' | 'video'
+		mediaType: 'im' | 'lk' | 'vd'
+		mediaName: string
+	}) => void
+	id: string
+	url: string
+	previewFn: () => void
+
+	dragStart: ({
+		e,
+		url,
+		fileName,
+	}: {
+		e: React.DragEvent
+		url: string
+		fileName: string
+	}) => void
+}
+
+export const VideoTileSS = ({
+	url,
+	previewFn,
+	dragStart,
+	id,
+}: VideoTileSSProps) => {
+	const [dragActive, setDragActive] = useState(false)
+
+	const entireDivRef = useRef<HTMLDivElement>(null)
+
+	const draggingBtnRef = useRef<HTMLDivElement>(null)
+
+	const handleDragStart = (e: React.DragEvent) => {
+		if (entireDivRef.current && draggingBtnRef.current) {
+			const rectDiv = entireDivRef.current.getBoundingClientRect()
+			const rectBtn = draggingBtnRef.current.getBoundingClientRect()
+			const offsetX = rectBtn.left - rectDiv.left + rectBtn.width / 2
+			const offsetY = rectBtn.top - rectDiv.top + rectBtn.height / 2
+
+			e.dataTransfer.setDragImage(entireDivRef.current, offsetX, offsetY)
+			dragStart({ e: e, url: url, fileName: id })
+		}
+	}
+
+	return (
+		<div
+			ref={entireDivRef}
+			className={`group relative z-20 h-[155px] rounded-md transition-all duration-500 ease-in-out ${dragActive ? 'ring-2 ring-orange-50' : ''}`}>
+			<div
+				className="bg-blur-50 relative h-full w-full cursor-pointer rounded-md transition-all duration-500 ease-in-out group-hover:opacity-60"
+				onClick={previewFn}>
+				<video key={url} className="h-full w-full  rounded-md object-cover">
+					<source src={url} type="video/mp4" />
+					Your browser does not support the video tag.
+				</video>
+				<div className=" left-s bottom-s bg-background-100/80 p-xs absolute rounded-[200px]">
+					<YtVideoIcon color="white" />
+				</div>
+			</div>
+
+			<div
+				ref={draggingBtnRef}
+				id="dragging-btn"
+				draggable
+				onDragStart={handleDragStart}
+				onMouseUp={() => setDragActive(false)}
+				onMouseDown={() => setDragActive(true)}
+				onMouseLeave={() => setDragActive(false)}
+				className="right-s top-s bg-background-100 p-xs hover:bg-grey-20 active:bg-orange-20 absolute z-20 hidden  cursor-grab rounded-[200px] transition-all duration-150 ease-in-out active:cursor-grabbing  group-hover:block">
+				<DraggingIcon />
+			</div>
+		</div>
+	)
+}

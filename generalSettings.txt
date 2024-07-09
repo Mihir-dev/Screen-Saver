@@ -1,0 +1,104 @@
+import {
+  Button,
+  DeviceAccordion,
+  DisplayAccordion,
+  GeneralAccordion,
+  GenericPopup,
+  MaintenanceAccordion,
+  PowerOptionsAccordion,
+  ScreenSaverAccordion,
+  SecurityAccordion,
+  SettingsRemoteAccessPopup,
+} from "@jiomeet/ui";
+import img from "src/assets/settings/remoteAccessPopupImg.png";
+import {
+  useSettings,
+  useSettingsConfig,
+} from "src/components/settings/settings.hooks";
+import { ROUTER_CONSTANT, remoteAccessPopupData } from "src/constant";
+
+interface GeneralSettingsProps {
+  hubDeviceId: string;
+}
+
+export const GeneralSettings = ({ hubDeviceId }: GeneralSettingsProps) => {
+  const {
+    handleMenuClick,
+    t,
+    tailwindTheme,
+    setRemoteAccessPopup,
+    remoteAccessPopup,
+  } = useSettings();
+
+  const { settingsConfig, setSettingsConfig, updateSettingsConfig } =
+    useSettingsConfig(hubDeviceId);
+
+  return (
+    <>
+      <div className="space-y-s mt-m rounded-ml settings-div h-[75%] w-full self-stretch overflow-y-auto">
+        <GeneralAccordion
+          state={settingsConfig.general}
+          dispatch={setSettingsConfig}
+        />
+        <DeviceAccordion
+          state={settingsConfig.device}
+          dispatch={setSettingsConfig}
+        />
+        <MaintenanceAccordion
+          state={settingsConfig.maintenance}
+          dispatch={setSettingsConfig}
+        />
+        <SecurityAccordion
+          state={settingsConfig.security}
+          dispatch={setSettingsConfig}
+        />
+        <DisplayAccordion
+          state={settingsConfig.display}
+          dispatch={setSettingsConfig}
+        />
+        <PowerOptionsAccordion
+          state={settingsConfig.powerOptions}
+          dispatch={setSettingsConfig}
+        />
+        <ScreenSaverAccordion />
+      </div>
+      <div className="space-x-s text-body-s-bold mt-l flex justify-center">
+        <Button
+          className="py-xs  px-base rounded-xxl border-grey-40 min-w-[141px] border text-[#F7B178] "
+          backgroundColor="transparent"
+          onClick={() => handleMenuClick(ROUTER_CONSTANT.Rooms)}
+        >
+          {t("cancel")}
+        </Button>
+        <Button
+          className="text-grey-100 py-xs px-base rounded-xxl min-w-[141px] border border-transparent "
+          backgroundColor={
+            tailwindTheme.tailwindConfiguration?.colors?.orange[50]
+          }
+          onClick={() => {
+            updateSettingsConfig();
+            if (settingsConfig.security.enableRemoteAccess)
+              setRemoteAccessPopup(true);
+          }}
+        >
+          {t("save_changes")}
+        </Button>
+      </div>
+      {remoteAccessPopup && (
+        <GenericPopup closePopup={() => setRemoteAccessPopup((prev) => !prev)}>
+          <SettingsRemoteAccessPopup
+            img={img}
+            popupToggle={() => setRemoteAccessPopup(false)}
+            title={remoteAccessPopupData.title}
+            subTitle={remoteAccessPopupData.subTitle}
+            question={remoteAccessPopupData.question}
+            points={remoteAccessPopupData.points}
+            btnText={remoteAccessPopupData.btnText}
+            downloadText={remoteAccessPopupData.downloadText}
+            downloadLink={remoteAccessPopupData.downloadLink}
+          />
+        </GenericPopup>
+      )}
+    </>
+  );
+};
