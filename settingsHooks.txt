@@ -1,0 +1,402 @@
+import logger from '@jiomeet/logger'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useContext, useEffect, useReducer, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { HomeMenuEvent } from 'src/components/home'
+import { EMITTER_CONSTANT, SETTINGS_PAYLOAD_CONFIG } from 'src/constant'
+import { HomeContext } from 'src/context/HomeContext'
+import { useTailwindTheme } from 'src/context/TailwindThemeContext'
+import { Emitter } from 'src/events'
+import {
+	CustomError,
+	RoomControllersDatatype,
+	RoomHub,
+	SettingsAction,
+	SettingsPayloadConfig,
+} from 'src/interfaces'
+import {
+	MediaImageData,
+	MediaLinkData,
+	MediaVideoData,
+} from 'src/interfaces/signage.interfaces'
+import {
+	deleteRoomController,
+	fetchAllRoomControllers,
+	fetchAllSettingsConfig,
+	updateAuthorizedRoomController,
+	updateBulkSettingsConfigAPI,
+	updateSettingsConfigAPI,
+} from 'src/services/settings-service'
+import { fetchAllSignageMediaData } from 'src/services/signage-service'
+import { handleServiceError, showToast } from 'src/utils'
+
+const settingsReducer = (
+	state: SettingsPayloadConfig,
+	action: SettingsAction,
+): SettingsPayloadConfig => {
+	switch (action.type) {
+		case 'UPDATE_GENERAL':
+			return {
+				...state,
+				general: { ...state.general, ...action.payload },
+			}
+		case 'UPDATE_ACCESS_POINT':
+			return {
+				...state,
+				accessPoint: { ...state.accessPoint, ...action.payload },
+			}
+		case 'UPDATE_NETWORK':
+			return {
+				...state,
+				network: { ...state.network, ...action.payload },
+			}
+		case 'UPDATE_DEVICE':
+			return {
+				...state,
+				device: { ...state.device, ...action.payload },
+			}
+		case 'UPDATE_MAINTENANCE':
+			return {
+				...state,
+				maintenance: { ...state.maintenance, ...action.payload },
+			}
+		case 'UPDATE_SECURITY':
+			return {
+				...state,
+				security: { ...state.security, ...action.payload },
+			}
+		case 'UPDATE_APPS':
+			return {
+				...state,
+				apps: { ...state.apps, ...action.payload },
+			}
+		case 'UPDATE_DISPLAY':
+			return {
+				...state,
+				display: { ...state.display, ...action.payload },
+			}
+		case 'UPDATE_POWER_OPTIONS':
+			return {
+				...state,
+				powerOptions: { ...state.powerOptions, ...action.payload },
+			}
+		case 'UPDATE_CONFIG':
+			return action.payload
+		default:
+			return state
+	}
+}
+
+export const useSettingsConfig = (
+	hubDeviceId: string,
+	settingsComponent: boolean,
+) => {
+	const [settingsConfig, setSettingsConfig] = useReducer(
+		settingsReducer,
+		SETTINGS_PAYLOAD_CONFIG,
+	)
+	const queryClient = useQueryClient()
+
+	const fetchSettingsConfig = useMutation({
+		mutationFn: () => fetchAllSettingsConfig(hubDeviceId),
+		onSuccess: (data) => {
+			if (data) {
+				setSettingsConfig({
+					type: 'UPDATE_CONFIG',
+					payload: data.data,
+				})
+				Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+				showToast('app_name', 'Settings Fetched Successfully', false)
+			}
+		},
+		onError: async (error: CustomError) => {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			handleServiceError(error)
+		},
+	})
+
+	const updateSettingsConfigMutation = useMutation({
+		mutationFn: () => updateSettingsConfigAPI(hubDeviceId, settingsConfig),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['settingsConfig'] })
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			showToast('app_name', 'settings_updated', false)
+			fetchSettingsConfig.mutate()
+		},
+		onError: async (error: CustomError) => {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			handleServiceError(error)
+		},
+	})
+
+	const updateSettingsConfig = () => {
+		Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
+		updateSettingsConfigMutation.mutate()
+	}
+
+	const refreshSettingsConfig = () => {
+		Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
+		fetchSettingsConfig.mutate()
+	}
+
+	useEffect(() => {
+		if (!settingsComponent) {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
+			fetchSettingsConfig.mutate()
+		}
+	}, [])
+
+	const [imageList, setImageList] = useState<MediaImageData[]>([])
+	const [linkList, setLinkList] = useState<MediaLinkData[]>([])
+	const [videoList, setVideoList] = useState<MediaVideoData[]>([])
+
+	const {
+		data: mediaData,
+		isPending: mediaDataLoading,
+		isSuccess: mediaDataSuccess,
+		isError: mediaDataError,
+	} = useQuery({
+		queryFn: () => fetchAllSignageMediaData(),
+		queryKey: ['signageMediaData'],
+	})
+
+	useEffect(() => {
+		if (mediaData) {
+			setImageList(mediaData.data.imageContent)
+			setLinkList(mediaData.data.linkContent)
+			setVideoList(mediaData.data.videoContent)
+		}
+		if (mediaDataLoading) {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
+		}
+		if (mediaDataSuccess) {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+		}
+		if (mediaDataError) {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			showToast('app_name', 'network_error', true)
+		}
+	}, [mediaData, mediaDataLoading, mediaDataSuccess, mediaDataError])
+
+	return {
+		settingsConfig,
+		setSettingsConfig,
+		updateSettingsConfig,
+		refreshSettingsConfig,
+		imageList,
+		videoList,
+		linkList,
+	}
+}
+
+export const useRoomControllers = (
+	hubDeviceId: string,
+	settingsComponent: boolean,
+) => {
+	const [controllers, setControllers] = useState<RoomControllersDatatype[]>([])
+	const [refresh, setRefresh] = useState<boolean>(false)
+
+	const queryClient = useQueryClient()
+
+	const {
+		data: roomControllerData,
+		isPending: roomControllerDataLoading,
+		isSuccess: roomControllerDataSuccess,
+		isError: roomControllerDataError,
+	} = useQuery<{
+		success: boolean
+		data: RoomControllersDatatype[]
+	}>({
+		queryFn: () =>
+			fetchAllRoomControllers(hubDeviceId)
+				.then((res) => res.data)
+				.catch((error) => {
+					console.error('Error:', error)
+					throw error
+				}),
+		queryKey: ['roomControllers'],
+		enabled: !settingsComponent,
+	})
+
+	const deleteController = useMutation({
+		mutationFn: (_id: string) => deleteRoomController(_id, hubDeviceId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['roomControllers'] })
+			showToast('app_name', 'room_controller_deleted_successfully', false)
+		},
+		onError: async (error: CustomError) => {
+			logger.info('Error on addRoomHubService')
+			handleServiceError(error)
+		},
+	})
+
+	const authoriseController = useMutation({
+		mutationFn: ({
+			_id,
+			isauthorised,
+		}: {
+			_id: string
+			isauthorised: boolean
+		}) => updateAuthorizedRoomController(_id, isauthorised, hubDeviceId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['roomControllers'] })
+			showToast(
+				'app_name',
+				'room_controller_status_updated_successfully',
+				false,
+			)
+		},
+		onError: async (error: CustomError) => {
+			logger.info('Error on addRoomHubService')
+			handleServiceError(error)
+		},
+	})
+
+	const refreshRoomControllers = () => {
+		queryClient.invalidateQueries({ queryKey: ['roomControllers'] })
+		setRefresh(true)
+	}
+
+	useEffect(() => {
+		if (roomControllerData) {
+			logger.info(roomControllerData.data)
+			setControllers(roomControllerData.data)
+		}
+		if (roomControllerDataLoading) {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
+		}
+		if (roomControllerDataSuccess) {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			if (refresh) {
+				showToast('app_name', 'room_controllers_fetched_successfully', false)
+				setRefresh(false)
+			}
+		}
+		if (roomControllerDataError) {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			showToast('app_name', 'network_error', true)
+		}
+	}, [
+		roomControllerData,
+		roomControllerDataLoading,
+		roomControllerDataSuccess,
+		roomControllerDataError,
+		refresh,
+		settingsComponent,
+	])
+
+	return {
+		controllers,
+		deleteController,
+		authoriseController,
+		refreshRoomControllers,
+	}
+}
+
+export const useSettings = () => {
+	const { setActiveMenu } = useContext(HomeContext)
+	const navigate = useNavigate()
+	const [rcDropwDown, setRCDropDown] = useState(0)
+
+	const { t } = useTranslation()
+
+	const tailwindTheme = useTailwindTheme()
+
+	const handleMenuClick = (selectedMenu: string) => {
+		HomeMenuEvent(selectedMenu, navigate)
+		setActiveMenu(selectedMenu)
+	}
+
+	const [remoteAccessPopup, setRemoteAccessPopup] = useState(false)
+
+	const { state } = useLocation()
+	const { selectData, roomController, bulk } = state
+	const roomHub: RoomHub = bulk ? selectData[0] : selectData
+
+	const bulkSettingslist: string[] = []
+
+	const bulkListings: { hubDeviceId: string; hubDeviceName: string }[] = []
+
+	if (bulk) {
+		selectData.forEach((device: RoomHub) => {
+			bulkSettingslist.push(device._id)
+			const deviceObj: { hubDeviceId: string; hubDeviceName: string } = {
+				hubDeviceId: device._id,
+				hubDeviceName: device.deviceName,
+			}
+			bulkListings.push(deviceObj)
+		})
+	}
+
+	return {
+		t,
+		rcDropwDown,
+		setRCDropDown,
+		handleMenuClick,
+		tailwindTheme,
+		roomHub,
+		remoteAccessPopup,
+		setRemoteAccessPopup,
+		roomController,
+		bulk,
+		bulkSettingslist,
+		bulkListings,
+	}
+}
+
+export const useBulkSettingsConfig = (hubDeviceId: string) => {
+	const [settingsBulkConfig, setSettingsBulkConfig] = useReducer(
+		settingsReducer,
+		SETTINGS_PAYLOAD_CONFIG,
+	)
+
+	const queryClient = useQueryClient()
+
+	const fetchSettingsConfig = useMutation({
+		mutationFn: () => fetchAllSettingsConfig(hubDeviceId),
+		onSuccess: (data) => {
+			if (data) {
+				setSettingsBulkConfig({
+					type: 'UPDATE_CONFIG',
+					payload: data.data,
+				})
+				Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			}
+		},
+		onError: async (error: CustomError) => {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			handleServiceError(error)
+		},
+	})
+
+	const updateBulkSettingsConfigMutation = useMutation({
+		mutationFn: (hubDeviceIds: string[]) =>
+			updateBulkSettingsConfigAPI(hubDeviceIds, settingsBulkConfig),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['settingsConfig'] })
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			showToast('app_name', 'settings_updated', false)
+		},
+		onError: async (error: CustomError) => {
+			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
+			handleServiceError(error)
+		},
+	})
+
+	const updateBulkSettingsConfig = (hubDeviceIDs: string[]) => {
+		Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
+		updateBulkSettingsConfigMutation.mutate(hubDeviceIDs)
+	}
+
+	useEffect(() => {
+		Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
+		fetchSettingsConfig.mutate()
+	}, [])
+
+	return {
+		settingsBulkConfig,
+		setSettingsBulkConfig,
+		updateBulkSettingsConfig,
+	}
+}

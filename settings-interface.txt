@@ -1,0 +1,132 @@
+export interface GeneralConfig {
+	deviceName: string
+	licenseKey: string
+	timezone: string
+	showDefaultScreenSaver: boolean
+	airServer: boolean
+	alwaysShowIP: boolean
+	displayTimeIn24HourFormat: boolean
+	forwardingTo: string
+}
+
+export interface AccessPointConfig {
+	enableAccessPoint: boolean
+	enableStaticPassword: boolean
+	SSID: string
+	WAN: string
+	staticPassword: string
+}
+
+export interface NetworkConfig {
+	enableProxy: boolean
+}
+
+export interface DeviceConfig {
+	systemLanguage: string
+	kioskMode: boolean
+	autoRunJioRooms: boolean
+	windowsConsentPrompt: boolean
+	windowsUpdates: boolean
+	allowScreenLock: boolean
+}
+
+export interface MaintenanceConfig {
+	reboot: boolean
+	update: boolean
+	rebootStartTime: string
+	rebootEndTime: string
+	updateStartTime: string
+	updateEndTime: string
+}
+
+export interface SecurityConfig {
+	enableSettingPassword: boolean
+	settingsPassword: string
+	enableCalendarDescription: boolean
+	enableMeetingRemainders: boolean
+	enableRemoteAccess: boolean
+	remoteAccessPassword: string
+	showStatusBar: boolean
+	showFileExplorer: boolean
+	showHomeScreenCalendar: boolean
+	enablePromptForWeblink: boolean
+	hideJoinInfoOnNonScheduledMeeting: boolean
+	localApiToken: string
+}
+
+export interface AppsConfig {
+	enableRemoteControl: boolean
+	letParticipantsOpenWeblinks: boolean
+	automateMeetingActions: boolean
+	displayCalendarOnApp: boolean
+	pinTaskbar: boolean
+	rumTeamsInTemprorySession: boolean
+	allowAutoStartOfApps: boolean
+}
+
+export interface DisplayConfig {
+	mainDisplay: number
+	mirrorDisplay: boolean
+	mirrorDisplayFromMeetingSettings: boolean
+	enable4kAndHigherResolutions: boolean
+	displayOffHourStartTime: string
+	displayOffHourEndTime: string
+}
+
+export interface PowerOptionsConfig {
+	allowUsersToPowerOffDevice: boolean
+}
+
+export interface DefaultDisplayType {
+	mediaName: string
+	mediaType: 'vd' | 'im' | 'lk'
+}
+
+export interface SequenceScreenSaver {
+	mediaName: string
+	mediaType: 'vd' | 'im' | 'lk'
+	startTime: string
+	endTime: string
+}
+
+export interface ScreenSaverConfig {
+	defaultDisplay1: DefaultDisplayType
+	defaultDisplay2: DefaultDisplayType
+	display1: SequenceScreenSaver[]
+	display2: SequenceScreenSaver[]
+}
+
+export interface MediaImageData {
+	fileSize: number
+	imageName: string
+	imageUrl: string
+}
+
+export interface MediaVideoData {
+	fileSize: number
+	videoName: string
+	videoUrl: string
+}
+
+export interface MediaLinkData {
+	linkTitle: string
+	linkUrl: string
+}
+
+export type SettingsAction =
+	| { type: 'UPDATE_GENERAL'; payload: Partial<GeneralConfig> }
+	| { type: 'UPDATE_ACCESS_POINT'; payload: Partial<AccessPointConfig> }
+	| { type: 'UPDATE_NETWORK'; payload: Partial<NetworkConfig> }
+	| { type: 'UPDATE_DEVICE'; payload: Partial<DeviceConfig> }
+	| { type: 'UPDATE_MAINTENANCE'; payload: Partial<MaintenanceConfig> }
+	| { type: 'UPDATE_SECURITY'; payload: Partial<SecurityConfig> }
+	| { type: 'UPDATE_APPS'; payload: Partial<AppsConfig> }
+	| { type: 'UPDATE_DISPLAY'; payload: Partial<DisplayConfig> }
+	| { type: 'UPDATE_POWER_OPTIONS'; payload: Partial<PowerOptionsConfig> }
+	| { type: 'UPDATE_SCREEN_SAVER'; payload: Partial<ScreenSaverConfig> }
+
+export enum IconPadding {
+	Left = 'Left',
+	Right = 'Right',
+	None = 'None',
+}
