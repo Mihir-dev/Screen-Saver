@@ -10,18 +10,35 @@ import {
 	SecurityAccordion,
 	SettingsRemoteAccessPopup,
 } from '@jiomeet/ui'
+import { Dispatch } from 'react'
 import img from 'src/assets/settings/remoteAccessPopupImg.png'
-import {
-	useSettings,
-	useSettingsConfig,
-} from 'src/components/settings/settings.hooks'
+import { useSettings } from 'src/components/settings/settings.hooks'
 import { ROUTER_CONSTANT, remoteAccessPopupData } from 'src/constant'
+import { SettingsAction, SettingsPayloadConfig } from 'src/interfaces'
+import {
+	MediaImageData,
+	MediaLinkData,
+	MediaVideoData,
+} from 'src/interfaces/signage.interfaces'
 
 interface GeneralSettingsProps {
 	hubDeviceId: string
+	settingsConfig: SettingsPayloadConfig
+	setSettingsConfig: Dispatch<SettingsAction>
+	updateSettingsConfig: () => void
+	imageList: MediaImageData[]
+	linkList: MediaLinkData[]
+	videoList: MediaVideoData[]
 }
 
-export const GeneralSettings = ({ hubDeviceId }: GeneralSettingsProps) => {
+export const GeneralSettings = ({
+	settingsConfig,
+	setSettingsConfig,
+	updateSettingsConfig,
+	imageList,
+	linkList,
+	videoList,
+}: GeneralSettingsProps) => {
 	const {
 		handleMenuClick,
 		t,
@@ -29,15 +46,6 @@ export const GeneralSettings = ({ hubDeviceId }: GeneralSettingsProps) => {
 		setRemoteAccessPopup,
 		remoteAccessPopup,
 	} = useSettings()
-
-	const {
-		settingsConfig,
-		setSettingsConfig,
-		updateSettingsConfig,
-		imageList,
-		videoList,
-		linkList,
-	} = useSettingsConfig(hubDeviceId, false)
 
 	return (
 		<>
@@ -70,6 +78,8 @@ export const GeneralSettings = ({ hubDeviceId }: GeneralSettingsProps) => {
 					imageList={imageList}
 					videoList={videoList}
 					linkList={linkList}
+					state={settingsConfig.screenSaver}
+					dispatch={setSettingsConfig}
 				/>
 			</div>
 			<div className="space-x-s text-body-s-bold mt-l flex justify-center">

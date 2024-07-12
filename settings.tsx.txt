@@ -1,0 +1,168 @@
+import {
+	BackwardIcon,
+	Button,
+	ForwardIcon,
+	InfoIcon,
+	RefreshIcon,
+} from '@jiomeet/ui'
+import {
+	useRoomControllers,
+	useSettings,
+	useSettingsConfig,
+} from 'src/components/settings/settings.hooks'
+import { ROUTER_CONSTANT } from 'src/constant'
+
+import {
+	BulkSettings,
+	GeneralSettings,
+	RoomControllerSettings,
+} from 'src/components/settings/Sub-Components'
+
+import { useEffect, useState } from 'react'
+import { Tooltip } from 'react-tooltip'
+import './settings.css'
+
+const Settings = () => {
+	const {
+		handleMenuClick,
+		t,
+		roomHub,
+		roomController,
+		bulk,
+		bulkSettingslist,
+		bulkListings,
+	} = useSettings()
+
+	const [subComponent, setSubComponent] = useState<
+		'roomController' | 'bulk' | 'general'
+	>('bulk')
+
+	useEffect(() => {
+		if (roomController) {
+			setSubComponent('roomController')
+		} else if (bulk) {
+			setSubComponent('bulk')
+		} else {
+			setSubComponent('general')
+		}
+	}, [roomController, bulk])
+
+	const {
+		refreshSettingsConfig,
+		settingsConfig,
+		setSettingsConfig,
+		updateSettingsConfig,
+		linkList,
+		imageList,
+		videoList,
+	} = useSettingsConfig(roomHub._id, subComponent === 'general')
+
+	const {
+		refreshRoomControllers,
+		controllers,
+		deleteController,
+		authoriseController,
+	} = useRoomControllers(roomHub._id, subComponent === 'roomController')
+
+	return (
+		<div className=" font-jiotypemedium text-grey-100 pt-xxs bg-customBg h-full w-full ">
+			<div className=" space-y-xxs flex flex-col">
+				<div className="flex items-center">
+					<p
+						className=" text-orange-60 text-body-xs-bold cursor-pointer"
+						onClick={() => handleMenuClick(ROUTER_CONSTANT.Rooms)}>
+						{t('rooms')}
+					</p>
+					<ForwardIcon />
+					<p className=" text-body-xs-bold text-grey-100/80 cursor-pointer">
+						{roomController
+							? t('room_controller')
+							: bulk
+								? t('bulk_settings_section')
+								: t('settings')}
+					</p>
+				</div>
+				<div className="flex justify-between">
+					{bulk ? (
+						<div className="space-x-xs flex items-center">
+							<p className="text-body-m-bold text-grey-100">
+								<span>{bulkSettingslist.length} </span>
+								{t('devices_selected')}
+							</p>
+							<div
+								data-tooltip-id="info"
+								data-tooltip-place="right"
+								data-tooltip-variant="light">
+								<InfoIcon />
+							</div>
+							<Tooltip
+								id="info"
+								place="right"
+								classNameArrow="tooltip-arrow"
+								className="tooltip-container text-left">
+								<p className=" text-body-xxs text-orange-40">
+									{t('common_settings_will_be_applied_to_below_devices')}
+								</p>
+								{bulkListings?.map(({ hubDeviceId, hubDeviceName }) => (
+									<p
+										className="text-body-xxs"
+										key={hubDeviceId}>{`${hubDeviceName} (${hubDeviceId})`}</p>
+								))}
+							</Tooltip>
+						</div>
+					) : (
+						<div className="space-x-xs flex items-center">
+							<p className="text-body-m-bold">{roomHub.deviceName}</p>
+							<div className="text-grey-100/80 text-body-s">{`(${roomHub._id})`}</div>
+						</div>
+					)}
+					<div className="space-x-xs flex items-center">
+						<Button
+							className="border-grey-40 px-s py-xxs rounded-pill border"
+							onClick={() => handleMenuClick(ROUTER_CONSTANT.Rooms)}>
+							<div className="space-x-xxs flex items-center">
+								<BackwardIcon />
+								<p className="text-orange-60 text-body-s-bold">
+									{t('go_back')}
+								</p>
+							</div>
+						</Button>
+						{(roomController || !bulk) && (
+							<div
+								onClick={
+									roomController
+										? refreshRoomControllers
+										: refreshSettingsConfig
+								}
+								className="p-xs hover:bg-grey-20 flex cursor-pointer items-center justify-center rounded-[1000px]">
+								<RefreshIcon height="16" width="16" />
+							</div>
+						)}
+					</div>
+				</div>
+			</div>
+			{roomController ? (
+				<RoomControllerSettings
+					controllers={controllers}
+					deleteController={(controller) => deleteController.mutate(controller)}
+					authoriseController={(data) => authoriseController.mutate(data)}
+					hubDeviceId={roomHub._id}
+				/>
+			) : bulk ? (
+				<BulkSettings hubDeviceId={roomHub._id} />
+			) : (
+				<GeneralSettings
+					hubDeviceId={roomHub._id}
+					settingsConfig={settingsConfig}
+					setSettingsConfig={setSettingsConfig}
+					updateSettingsConfig={updateSettingsConfig}
+					imageList={imageList}
+					videoList={videoList}
+					linkList={linkList}
+				/>
+			)}
+		</div>
+	)
+}
+
+export default Settings

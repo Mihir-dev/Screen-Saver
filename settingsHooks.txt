@@ -81,8 +81,13 @@ const settingsReducer = (
 				...state,
 				powerOptions: { ...state.powerOptions, ...action.payload },
 			}
+		case 'UPDATE_SCREEN_SAVER':
+			return {
+				...state,
+				screenSaver: { ...state.screenSaver, ...action.payload },
+			}
 		case 'UPDATE_CONFIG':
-			return action.payload
+			return { ...action.payload }
 		default:
 			return state
 	}
@@ -90,12 +95,15 @@ const settingsReducer = (
 
 export const useSettingsConfig = (
 	hubDeviceId: string,
-	settingsComponent: boolean,
+	fetchData: boolean = false,
 ) => {
 	const [settingsConfig, setSettingsConfig] = useReducer(
 		settingsReducer,
 		SETTINGS_PAYLOAD_CONFIG,
 	)
+
+	const [settingsSaved, setSettingsSaved] = useState(false)
+
 	const queryClient = useQueryClient()
 
 	const fetchSettingsConfig = useMutation({
@@ -107,7 +115,10 @@ export const useSettingsConfig = (
 					payload: data.data,
 				})
 				Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
-				showToast('app_name', 'Settings Fetched Successfully', false)
+				if (!settingsSaved) {
+					showToast('app_name', 'Settings Fetched Successfully', false)
+				}
+				setSettingsSaved(false)
 			}
 		},
 		onError: async (error: CustomError) => {
@@ -122,6 +133,7 @@ export const useSettingsConfig = (
 			queryClient.invalidateQueries({ queryKey: ['settingsConfig'] })
 			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
 			showToast('app_name', 'settings_updated', false)
+			setSettingsSaved(true)
 			fetchSettingsConfig.mutate()
 		},
 		onError: async (error: CustomError) => {
@@ -141,11 +153,11 @@ export const useSettingsConfig = (
 	}
 
 	useEffect(() => {
-		if (!settingsComponent) {
+		if (fetchData) {
 			Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
 			fetchSettingsConfig.mutate()
 		}
-	}, [])
+	}, [fetchData])
 
 	const [imageList, setImageList] = useState<MediaImageData[]>([])
 	const [linkList, setLinkList] = useState<MediaLinkData[]>([])
@@ -192,7 +204,7 @@ export const useSettingsConfig = (
 
 export const useRoomControllers = (
 	hubDeviceId: string,
-	settingsComponent: boolean,
+	fetchData: boolean = false,
 ) => {
 	const [controllers, setControllers] = useState<RoomControllersDatatype[]>([])
 	const [refresh, setRefresh] = useState<boolean>(false)
@@ -216,7 +228,7 @@ export const useRoomControllers = (
 					throw error
 				}),
 		queryKey: ['roomControllers'],
-		enabled: !settingsComponent,
+		enabled: fetchData,
 	})
 
 	const deleteController = useMutation({
@@ -283,7 +295,7 @@ export const useRoomControllers = (
 		roomControllerDataSuccess,
 		roomControllerDataError,
 		refresh,
-		settingsComponent,
+		fetchData,
 	])
 
 	return {

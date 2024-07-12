@@ -80,11 +80,13 @@ export interface PowerOptionsConfig {
 export interface DefaultDisplayType {
 	mediaName: string
 	mediaType: 'vd' | 'im' | 'lk'
+	mediaUrl: string
 }
 
 export interface SequenceScreenSaver {
 	mediaName: string
 	mediaType: 'vd' | 'im' | 'lk'
+	mediaUrl: string
 	startTime: string
 	endTime: string
 }
@@ -94,23 +96,6 @@ export interface ScreenSaverConfig {
 	defaultDisplay2: DefaultDisplayType
 	display1: SequenceScreenSaver[]
 	display2: SequenceScreenSaver[]
-}
-
-export interface MediaImageData {
-	fileSize: number
-	imageName: string
-	imageUrl: string
-}
-
-export interface MediaVideoData {
-	fileSize: number
-	videoName: string
-	videoUrl: string
-}
-
-export interface MediaLinkData {
-	linkTitle: string
-	linkUrl: string
 }
 
 export type SettingsAction =
@@ -129,4 +114,21 @@ export enum IconPadding {
 	Left = 'Left',
 	Right = 'Right',
 	None = 'None',
+}
+
+export interface MediaImageData {
+	fileSize: number
+	imageName: string
+	imageUrl: string
+}
+
+export interface MediaVideoData {
+	fileSize: number
+	videoName: string
+	videoUrl: string
+}
+
+export interface MediaLinkData {
+	linkTitle: string
+	linkUrl: string
 }

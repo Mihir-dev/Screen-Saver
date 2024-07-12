@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AccordionTextDrop } from 'src/components/Dashboard/accordionTextDrop'
 import { ImageTileSS } from 'src/components/Dashboard/imageTIleSS'
 import { LinkTileSS } from 'src/components/Dashboard/linkTileSS'
@@ -9,15 +9,23 @@ interface fileInterface {
 	fileSize: number
 	fileName: string
 	fileUrl: string
-	fileType: 'image' | 'video' | 'link'
+	fileType: 'im' | 'vd' | 'lk'
+	startTime: string
+	endTime: string
 }
 
 export const SequenceTileSS = ({
 	fileData,
 	sequenceNo,
+	updateDateTime,
 }: {
 	fileData: fileInterface
 	sequenceNo: number
+	updateDateTime: (data: {
+		index: number
+		newStartTime: string
+		newEndTime: string
+	}) => void
 }) => {
 	const timeArray = [
 		'00:00',
@@ -75,6 +83,11 @@ export const SequenceTileSS = ({
 
 	const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setStartDate(e.target.value)
+		updateDateTime({
+			index: sequenceNo,
+			newStartTime: convertToISO(e.target.value, startTime),
+			newEndTime: convertToISO(endDate, endTime),
+		})
 		setIsStartDatePickerOpen(false)
 	}
 
@@ -89,28 +102,30 @@ export const SequenceTileSS = ({
 
 	const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setEndDate(e.target.value)
+		updateDateTime({
+			index: sequenceNo,
+			newStartTime: convertToISO(startDate, startTime),
+			newEndTime: convertToISO(e.target.value, endTime),
+		})
 		setIsEndDatePickerOpen(false)
 	}
 
-	const formatDate = (date: string): string => {
-		const options: Intl.DateTimeFormatOptions = {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-		}
-		const formattedDate = new Date(date).toLocaleDateString('en-US', options)
-		const [month, day, year] = formattedDate.split(' ')
-
-		if (month && day && year) {
-			return `${month.slice(0, 3)} ${day.replace(',', '')}, ${year}`
-		}
-
-		return formattedDate
-	}
+	useEffect(() => {
+		const { date: sequenceStartDate, time: sequenceStartTime } = convertFromISO(
+			fileData.startTime,
+		)
+		const { date: sequenceEndDate, time: sequenceEndTime } = convertFromISO(
+			fileData.endTime,
+		)
+		setStartDate(sequenceStartDate)
+		setStartTime(sequenceStartTime)
+		setEndDate(sequenceEndDate)
+		setEndTime(sequenceEndTime)
+	}, [fileData])
 
 	return (
 		<div id="rs-tile" className="space-y-xxs">
-			{fileData.fileType === 'image' && (
+			{fileData.fileType === 'im' && (
 				<ImageTileSS
 					dragStart={({ url }) => alert(url)}
 					id="1"
@@ -120,7 +135,7 @@ export const SequenceTileSS = ({
 				/>
 			)}
 
-			{fileData.fileType === 'video' && (
+			{fileData.fileType === 'vd' && (
 				<VideoTileSS
 					dragStart={({ url }) => alert(url)}
 					id="2"
@@ -130,7 +145,7 @@ export const SequenceTileSS = ({
 				/>
 			)}
 
-			{fileData.fileType === 'link' && (
+			{fileData.fileType === 'lk' && (
 				<LinkTileSS
 					dragStart={({ url }) => alert(url)}
 					id={fileData.fileName}
@@ -173,7 +188,14 @@ export const SequenceTileSS = ({
 								/>
 							</div>
 							<AccordionTextDrop
-								dropDownFn={(date) => setStartTime(date)}
+								dropDownFn={(time) => {
+									setStartTime(time)
+									updateDateTime({
+										index: sequenceNo,
+										newStartTime: convertToISO(startDate, time),
+										newEndTime: convertToISO(endDate, endTime),
+									})
+								}}
 								dropDownArray={timeArray}
 								ssStyles
 								subText={startTime}
@@ -209,7 +231,14 @@ export const SequenceTileSS = ({
 								/>
 							</div>
 							<AccordionTextDrop
-								dropDownFn={(date) => setEndTime(date)}
+								dropDownFn={(time) => {
+									setEndTime(time)
+									updateDateTime({
+										index: sequenceNo,
+										newStartTime: convertToISO(startDate, startTime),
+										newEndTime: convertToISO(endDate, time),
+									})
+								}}
 								dropDownArray={timeArray}
 								ssStyles
 								subText={endTime}
@@ -220,4 +249,46 @@ export const SequenceTileSS = ({
 			</div>
 		</div>
 	)
+}
+
+function convertToISO(date: string, time: string) {
+	const dateTimeString = `${date}T${time}:00.000Z`
+
+	const dateTime = new Date(dateTimeString)
+
+	const isoString = dateTime.toISOString()
+
+	return isoString
+}
+
+const formatDate = (date: string): string => {
+	const options: Intl.DateTimeFormatOptions = {
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+	}
+	const formattedDate = new Date(date).toLocaleDateString('en-US', options)
+	const [month, day, year] = formattedDate.split(' ')
+
+	if (month && day && year) {
+		return `${month.slice(0, 3)} ${day.replace(',', '')}, ${year}`
+	}
+
+	return formattedDate
+}
+
+function convertFromISO(isoString: string) {
+	const dateTime = new Date(isoString)
+
+	const year = dateTime.getUTCFullYear()
+	const month = String(dateTime.getUTCMonth() + 1).padStart(2, '0')
+	const day = String(dateTime.getUTCDate()).padStart(2, '0')
+
+	const hours = String(dateTime.getUTCHours()).padStart(2, '0')
+	const minutes = String(dateTime.getUTCMinutes()).padStart(2, '0')
+
+	const date = `${year}-${month}-${day}`
+	const time = `${hours}:${minutes}`
+
+	return { date, time }
 }

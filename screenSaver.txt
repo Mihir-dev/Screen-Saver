@@ -1,27 +1,50 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { ImageTileSS } from 'src/components/Dashboard/imageTIleSS'
 import { LinkTileSS } from 'src/components/Dashboard/linkTileSS'
 import { PreviewerDS } from 'src/components/Dashboard/previewerDS'
 import { SequenceTileSS } from 'src/components/Dashboard/sequenceTileSS'
 import { VideoTileSS } from 'src/components/Dashboard/videoTileSS'
+import { ComputerIcon } from 'src/components/icons/computer_icon'
 import { DropdownIcon } from 'src/components/icons/drop_down-icon'
 import { ExclamationIcon } from 'src/components/icons/exclamation_icon'
 import { ImageIcon } from 'src/components/icons/image_icon'
+import {
+	MediaImageData,
+	MediaLinkData,
+	MediaVideoData,
+	ScreenSaverConfig,
+	SettingsAction,
+} from 'src/interfaces'
 
-export const ScreenSaverAccordion = () => {
+interface ScreenSaverAccordionProps {
+	imageList: MediaImageData[]
+	linkList: MediaLinkData[]
+	videoList: MediaVideoData[]
+	state: ScreenSaverConfig
+	dispatch: React.Dispatch<SettingsAction>
+}
+
+export const ScreenSaverAccordion = ({
+	imageList,
+	linkList,
+	videoList,
+	state,
+	dispatch,
+}: ScreenSaverAccordionProps) => {
 	const [opened, setOpened] = useState(false)
-	const [display, setDisplay] = useState('display1')
+	const [display, setDisplay] = useState<'display1' | 'display2'>('display1')
+	const sequenceSectionRef = useRef<HTMLDivElement>(null)
 
 	const [defaultScreenSaver, setDefaultScreenSaver] = useState<{
 		fileSize: number
 		fileName: string
 		fileUrl: string
-		fileType: 'image' | 'video' | 'link'
+		fileType: 'im' | 'vd' | 'lk'
 	}>({
 		fileSize: 1,
 		fileName: '1',
 		fileUrl: '',
-		fileType: 'image',
+		fileType: 'im',
 	})
 
 	const [sequenceScreenSavers, setSequenceScreenSavers] = useState<
@@ -29,7 +52,9 @@ export const ScreenSaverAccordion = () => {
 			fileSize: number
 			fileName: string
 			fileUrl: string
-			fileType: 'image' | 'video' | 'link'
+			fileType: 'im' | 'vd' | 'lk'
+			startTime: string
+			endTime: string
 		}[]
 	>([])
 
@@ -67,7 +92,7 @@ export const ScreenSaverAccordion = () => {
 		e: React.DragEvent,
 		url: string,
 		fileName: string,
-		fileType: 'image' | 'link' | 'video',
+		fileType: 'im' | 'lk' | 'vd',
 	) => {
 		e.dataTransfer.setData('fileUrl', url)
 		e.dataTransfer.setData('fileName', fileName)
@@ -77,25 +102,46 @@ export const ScreenSaverAccordion = () => {
 	const handleOnDropDefault = (e: React.DragEvent) => {
 		const url = e.dataTransfer.getData('fileUrl') as string
 		const fileName = e.dataTransfer.getData('fileName') as string
-		const fileType = e.dataTransfer.getData('fileType') as
-			| 'image'
-			| 'video'
-			| 'link'
+		const fileType = e.dataTransfer.getData('fileType') as 'im' | 'vd' | 'lk'
 		setDefaultScreenSaver((prevState) => ({
 			...prevState,
 			fileName: fileName,
 			fileUrl: url,
 			fileType: fileType,
 		}))
+		if (display === 'display1') {
+			dispatch({
+				type: 'UPDATE_SCREEN_SAVER',
+				payload: {
+					defaultDisplay1: {
+						mediaName: fileName,
+						mediaType: fileType,
+						mediaUrl: url,
+					},
+				},
+			})
+		} else if (display === 'display2') {
+			dispatch({
+				type: 'UPDATE_SCREEN_SAVER',
+				payload: {
+					defaultDisplay2: {
+						mediaName: fileName,
+						mediaType: fileType,
+						mediaUrl: url,
+					},
+				},
+			})
+		}
 	}
 
 	const handleOnDropSequence = (e: React.DragEvent) => {
 		const url = e.dataTransfer.getData('fileUrl') as string
 		const fileName = e.dataTransfer.getData('fileName') as string
-		const fileType = e.dataTransfer.getData('fileType') as
-			| 'image'
-			| 'video'
-			| 'link'
+		const fileType = e.dataTransfer.getData('fileType') as 'im' | 'vd' | 'lk'
+
+		const currentDateTime = new Date(
+			new Date().getTime() + 5.5 * 60 * 60 * 1000,
+		)
 		setSequenceScreenSavers((prev) => [
 			...prev,
 			{
@@ -103,12 +149,160 @@ export const ScreenSaverAccordion = () => {
 				fileName: fileName,
 				fileUrl: url,
 				fileType: fileType,
+				startTime: currentDateTime.toISOString(),
+				endTime: currentDateTime.toISOString(),
 			},
 		])
+		if (display === 'display1') {
+			dispatch({
+				type: 'UPDATE_SCREEN_SAVER',
+				payload: {
+					display1: [
+						...(state.display1 || []),
+						{
+							mediaName: fileName,
+							mediaUrl: url,
+							mediaType: fileType,
+							startTime: currentDateTime.toISOString(),
+							endTime: currentDateTime.toISOString(),
+						},
+					],
+				},
+			})
+		} else if (display === 'display2') {
+			dispatch({
+				type: 'UPDATE_SCREEN_SAVER',
+				payload: {
+					display2: [
+						...(state.display2 || []),
+						{
+							mediaName: fileName,
+							mediaUrl: url,
+							mediaType: fileType,
+							startTime: currentDateTime.toISOString(),
+							endTime: currentDateTime.toISOString(),
+						},
+					],
+				},
+			})
+		}
 	}
+
+	useEffect(() => {
+		if (sequenceSectionRef.current) {
+			sequenceSectionRef.current.scrollTo({
+				top: sequenceSectionRef.current.scrollHeight,
+				behavior: 'smooth',
+			})
+		}
+	}, [sequenceScreenSavers.length])
+
+	useEffect(() => {
+		if (state) {
+			if (display === 'display1') {
+				setDefaultScreenSaver({
+					fileSize: 1,
+					fileName: state.defaultDisplay1.mediaName,
+					fileType: state.defaultDisplay1.mediaType,
+					fileUrl: state.defaultDisplay1.mediaUrl || '',
+				})
+				setSequenceScreenSavers(
+					state.display1.map((sequenceSS) => ({
+						fileSize: 1,
+						fileName: sequenceSS.mediaName,
+						fileType: sequenceSS.mediaType,
+						startTime: sequenceSS.startTime,
+						endTime: sequenceSS.endTime,
+						fileUrl: sequenceSS.mediaUrl,
+					})),
+				)
+			} else if (display === 'display2') {
+				setDefaultScreenSaver({
+					fileSize: 1,
+					fileName: state.defaultDisplay2.mediaName,
+					fileType: state.defaultDisplay2.mediaType,
+					fileUrl: state.defaultDisplay2.mediaUrl || '',
+				})
+				setSequenceScreenSavers(
+					state.display2.map((sequenceSS) => ({
+						fileSize: 1,
+						fileName: sequenceSS.mediaName,
+						fileType: sequenceSS.mediaType,
+						startTime: sequenceSS.startTime,
+						endTime: sequenceSS.endTime,
+						fileUrl: sequenceSS.mediaUrl,
+					})),
+				)
+			}
+		}
+	}, [state, display])
 
 	const handleDragOver = (e: React.DragEvent) => {
 		e.preventDefault()
+	}
+
+	const updateSequenceTime = ({
+		index,
+		newStartTime,
+		newEndTime,
+	}: {
+		index: number
+		newStartTime: string
+		newEndTime: string
+	}) => {
+		let newState: {
+			fileSize: number
+			fileName: string
+			fileUrl: string
+			fileType: 'im' | 'vd' | 'lk'
+			startTime: string
+			endTime: string
+		}[] = []
+
+		setSequenceScreenSavers((prevState) => {
+			newState = [...prevState]
+			newState[index] = {
+				...(newState[index] as {
+					fileSize: number
+					fileName: string
+					fileUrl: string
+					fileType: 'im' | 'vd' | 'lk'
+					startTime: string
+					endTime: string
+				}),
+				startTime: newStartTime,
+				endTime: newEndTime,
+			}
+			return newState
+		})
+
+		if (display === 'display1') {
+			dispatch({
+				type: 'UPDATE_SCREEN_SAVER',
+				payload: {
+					display1: newState.map((sequence) => ({
+						mediaName: sequence.fileName,
+						mediaType: sequence.fileType,
+						mediaUrl: sequence.fileUrl,
+						startTime: sequence.startTime,
+						endTime: sequence.endTime,
+					})),
+				},
+			})
+		} else if (display === 'display2') {
+			dispatch({
+				type: 'UPDATE_SCREEN_SAVER',
+				payload: {
+					display2: newState.map((sequence) => ({
+						mediaName: sequence.fileName,
+						mediaType: sequence.fileType,
+						mediaUrl: sequence.fileUrl,
+						startTime: sequence.startTime,
+						endTime: sequence.endTime,
+					})),
+				},
+			})
+		}
 	}
 
 	return (
@@ -118,9 +312,10 @@ export const ScreenSaverAccordion = () => {
 				className={`bg-grey-20 px-m font-jiotypemedium rounded-ml  flex-1  overflow-visible text-start transition-all duration-500 ease-in-out ${opened && 'pb-base'}`}>
 				<div
 					id="Component-Heading"
-					className="py-base flex flex-1 items-center justify-between "
+					className="py-base flex flex-1 cursor-pointer  items-center justify-between "
 					onClick={() => setOpened((prev) => !prev)}>
-					<p className={` text-body-m-bold ${opened && ' text-[#F7B178]'}`}>
+					<p
+						className={` text-body-s-bold ${opened ? ' text-orange-60' : 'text-grey-80'}`}>
 						Screensaver
 					</p>
 					<div className="">
@@ -154,10 +349,10 @@ export const ScreenSaverAccordion = () => {
 									<div
 										id="draggble-divs"
 										className="gap-base px-s relative grid grid-cols-2 overflow-hidden py-[2px] ">
-										{imageData.map(({ imageName, imageUrl }, i) => (
+										{imageList.map(({ imageName, imageUrl }, i) => (
 											<ImageTileSS
 												dragStart={({ e, url, fileName }) =>
-													handleOnDrag(e, url, fileName, 'image')
+													handleOnDrag(e, url, fileName, 'im')
 												}
 												key={imageName}
 												id={imageName.toString()}
@@ -172,10 +367,10 @@ export const ScreenSaverAccordion = () => {
 												url={imageUrl}
 											/>
 										))}
-										{videoData.map(({ videoName, videoUrl }, i) => (
+										{videoList.map(({ videoName, videoUrl }, i) => (
 											<VideoTileSS
 												dragStart={({ e, url, fileName }) =>
-													handleOnDrag(e, url, fileName, 'video')
+													handleOnDrag(e, url, fileName, 'vd')
 												}
 												key={videoName}
 												id={videoName.toString()}
@@ -190,10 +385,10 @@ export const ScreenSaverAccordion = () => {
 												url={videoUrl}
 											/>
 										))}
-										{linkData.map(({ linkTitle, linkUrl }) => (
+										{linkList.map(({ linkTitle, linkUrl }) => (
 											<LinkTileSS
 												dragStart={({ e, url, fileName }) =>
-													handleOnDrag(e, url, fileName, 'link')
+													handleOnDrag(e, url, fileName, 'lk')
 												}
 												key={linkUrl}
 												deleteFn={() => alert('Delete')}
@@ -213,12 +408,14 @@ export const ScreenSaverAccordion = () => {
 											onDrop={handleOnDropDefault}
 											onDragOver={handleDragOver}
 											className="flex-1">
-											{defaultScreenSaver.fileUrl.length > 0 ? (
+											{defaultScreenSaver &&
+											defaultScreenSaver.fileUrl &&
+											defaultScreenSaver.fileUrl.length > 0 ? (
 												<>
-													{defaultScreenSaver.fileType === 'image' && (
+													{defaultScreenSaver.fileType === 'im' && (
 														<ImageTileSS
 															dragStart={({ e, url, fileName }) =>
-																handleOnDrag(e, url, fileName, 'image')
+																handleOnDrag(e, url, fileName, 'im')
 															}
 															id="default-screenSaver"
 															previewFn={() =>
@@ -233,10 +430,10 @@ export const ScreenSaverAccordion = () => {
 														/>
 													)}
 
-													{defaultScreenSaver.fileType === 'video' && (
+													{defaultScreenSaver.fileType === 'vd' && (
 														<VideoTileSS
 															dragStart={({ e, url, fileName }) =>
-																handleOnDrag(e, url, fileName, 'video')
+																handleOnDrag(e, url, fileName, 'vd')
 															}
 															id="default-screenSaver"
 															previewFn={() =>
@@ -251,10 +448,10 @@ export const ScreenSaverAccordion = () => {
 														/>
 													)}
 
-													{defaultScreenSaver.fileType === 'link' && (
+													{defaultScreenSaver.fileType === 'lk' && (
 														<LinkTileSS
 															dragStart={({ e, url, fileName }) =>
-																handleOnDrag(e, url, fileName, 'video')
+																handleOnDrag(e, url, fileName, 'lk')
 															}
 															id="default-screenSaver"
 															deleteFn={() => alert('Delete')}
@@ -303,6 +500,7 @@ export const ScreenSaverAccordion = () => {
 									</p>
 									<div
 										onDrop={handleOnDropSequence}
+										ref={sequenceSectionRef}
 										onDragOver={handleDragOver}
 										className="scrollbar-thin ml-s mr-xxs  pr-xxs scrollbar-thumb-rounded-pill scrollbar-thumb-grey-100/[0.15] max-h-[270px] flex-1 overflow-y-auto overflow-x-hidden ">
 										{sequenceScreenSavers.length > 0 ? (
@@ -312,15 +510,19 @@ export const ScreenSaverAccordion = () => {
 														fileData={fileData}
 														key={i}
 														sequenceNo={i}
+														updateDateTime={updateSequenceTime}
 													/>
 												))}
 											</div>
 										) : (
 											<div className="flex h-full w-full items-center justify-center">
-												<p className="text-body-xxs text-grey-60">
-													Drag & Drop Image, Video or Link from available
-													screensavers
-												</p>
+												<div className="space-y-xs flex max-w-[186px] flex-col items-center">
+													<ComputerIcon />
+													<p className="text-body-xxs text-grey-60 text-center">
+														Drag & Drop Image, Video or Link from available
+														screensavers
+													</p>
+												</div>
 											</div>
 										)}
 									</div>
@@ -341,8 +543,8 @@ export const ScreenSaverAccordion = () => {
 							availSSPImagePreviewer: true,
 						})
 					}
-					imageList={imageData}
-					videoList={videoData}
+					imageList={imageList}
+					videoList={videoList}
 				/>
 			)}
 			{defaultSSPreviewPopupState && (
@@ -383,119 +585,3 @@ export const ScreenSaverAccordion = () => {
 		</>
 	)
 }
-
-interface MediaImageData {
-	fileSize: number
-	imageName: string
-	imageUrl: string
-}
-
-interface MediaVideoData {
-	fileSize: number
-	videoName: string
-	videoUrl: string
-}
-
-interface MediaLinkData {
-	linkTitle: string
-	linkUrl: string
-}
-
-const imageData: MediaImageData[] = [
-	{
-		fileSize: 1,
-		imageName: '1',
-		imageUrl:
-			'https://images.unsplash.com/photo-1719701110700-786ded92c755?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90b3MtZmVlZHwxfHx8ZW58MHx8fHx8',
-	},
-	{
-		fileSize: 2,
-		imageName: '2',
-		imageUrl:
-			'https://images.unsplash.com/photo-1719412653974-b5a5d4b49b07?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDV8NnNNVmpUTFNrZVF8fGVufDB8fHx8fA%3D%3D',
-	},
-	{
-		fileSize: 3,
-		imageName: '3',
-		imageUrl:
-			'https://images.unsplash.com/photo-1718938610048-843cfecefef6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90b3MtZmVlZHw1fHx8ZW58MHx8fHx8',
-	},
-	{
-		fileSize: 4,
-		imageName: '4',
-		imageUrl:
-			'https://images.unsplash.com/photo-1719515853811-1dc2cf112e24?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90b3MtZmVlZHw5fHx8ZW58MHx8fHx8',
-	},
-	{
-		fileSize: 5,
-		imageName: '5',
-		imageUrl:
-			'https://images.unsplash.com/photo-1718879329786-559f88f2279d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90b3MtZmVlZHwxMnx8fGVufDB8fHx8fA%3D%3D',
-	},
-	{
-		fileSize: 6,
-		imageName: '6',
-		imageUrl:
-			'https://images.unsplash.com/photo-1538169204832-1b461add30a5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDZ8NnNNVmpUTFNrZVF8fGVufDB8fHx8fA%3D%3D',
-	},
-	{
-		fileSize: 7,
-		imageName: '7',
-		imageUrl:
-			'https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDEwfDZzTVZqVExTa2VRfHxlbnwwfHx8fHw%3D',
-	},
-	{
-		fileSize: 8,
-		imageName: '8',
-		imageUrl:
-			'https://images.unsplash.com/photo-1506815444479-bfdb1e96c566?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDExfDZzTVZqVExTa2VRfHxlbnwwfHx8fHw%3D',
-	},
-	{
-		fileSize: 9,
-		imageName: '9',
-		imageUrl:
-			'https://images.unsplash.com/photo-1471079502516-250c19af6928?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE2fDZzTVZqVExTa2VRfHxlbnwwfHx8fHw%3D',
-	},
-	{
-		fileSize: 10,
-		imageName: '10',
-		imageUrl:
-			'https://images.unsplash.com/photo-1452570053594-1b985d6ea890?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE1fDZzTVZqVExTa2VRfHxlbnwwfHx8fHw%3D',
-	},
-]
-
-const videoData: MediaVideoData[] = [
-	{
-		videoName: '9OwiYoUitf2db15f110301720002315222',
-		videoUrl:
-			'https://storage.googleapis.com/jio-events-meet-public-le/stage1/t-e21b36cd-6935-4dae-8fd6-02cdd152fe1d/signageVideos/9OwiYoUitf2db15f110301720002315222.mp4?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=jio-events-meet-public-le%40jio-jiomeet.iam.gserviceaccount.com%2F20240704%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240704T070230Z&X-Goog-Expires=300&X-Goog-SignedHeaders=host&X-Goog-Signature=38b40fed8c691e9991ffabd4aa56d01e46ea685fc94409813aabefa0d2387b55abc3cedc3b2607e7275342608bad6c5b321ec094ff12b7859d39beb9343b32822abc01e7536a5ccb29ab39891b1620ae30a5ed4cc7ae9ef646d8f77afb71e1f13d934b169c560f50247594d76a4b6852660fb2e7c06a2afe34b4e6dd80203afd70b040a23684d507951c3d1d18b82afc2ed485146fa2043128e588fbb9d673525f99b3d7648e276f7ff7d774034ce7a3e78fdaf083cadfd051b037b3c58c8b6184c3abc87e68c2e5afcfd3d82ae0c7f826c33cf3ab6c4b0a7d9039c2757ec55a7913fe157831dce24d739d17e2f13269911a664cadcda658b5bb421ec7948075',
-		fileSize: 3075364,
-	},
-	{
-		videoName: 'PGNtNrHwde4911b0917971720003717272',
-		videoUrl:
-			'https://storage.googleapis.com/jio-events-meet-public-le/stage1/t-e21b36cd-6935-4dae-8fd6-02cdd152fe1d/signageVideos/PGNtNrHwde4911b0917971720003717272.mp4?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=jio-events-meet-public-le%40jio-jiomeet.iam.gserviceaccount.com%2F20240704%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240704T070230Z&X-Goog-Expires=300&X-Goog-SignedHeaders=host&X-Goog-Signature=74175ecf986d9aef5389aa4f86b1f737cf98764aad4fd903978148581a800ea509ff0f4228db4bb60585575e3eb3acb81f4fdac44f7634c8c5b1019c4703629f22d26cbdda9406d349abdd76421a7f824914aef7e2ebbb20f30909b65cdc1e4b8fcb936130bf6decdc9b66018f1f21ad0c97d2d38fb32cf89e0ebbcc747f10e270ac288b1c1d5ab21c4069ce3527e63cc53ca43d6aac13aa951787464ddb8b29815773b9df167870bda26c455aac5da0b16876723edba9f4f8bedece8917c563fd3889384b88856a462a805b16d578a415862f7d66d13d99b2409a9a59629e095edfdeeee7f4b484d6d0e981e8c04be96b7a623003c4afd1eb38710880941bbd',
-		fileSize: 1005843,
-	},
-	{
-		videoName: 'CDGDWOV3h7e0140760a0b1720007936560',
-		videoUrl:
-			'https://storage.googleapis.com/jio-events-meet-public-le/stage1/t-e21b36cd-6935-4dae-8fd6-02cdd152fe1d/signageVideos/CDGDWOV3h7e0140760a0b1720007936560.mp4?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=jio-events-meet-public-le%40jio-jiomeet.iam.gserviceaccount.com%2F20240704%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240704T070230Z&X-Goog-Expires=300&X-Goog-SignedHeaders=host&X-Goog-Signature=53ca6f69073c255c78dd67400c3141777c1a026916889616ca68902cd89c40da6247e1737b94aeaa1a9d6a7c6e444070e257242d3cf8f3ff423bc85bd489f6f5a032e60e0c375f0fac696dd217364df612942d42502057908280a93fac2787626072518084f9c7cfdc1301cbb573dc712790288c2326543545bba5d2407c57b7dd35d747db5816155ab49fd2538c36c40249b17575e14043a1df77865afbeb0b9b18753d137cac5a43393045b3d404e0137d009d9cb2c5813181dd4c80ce1b7829488b1696db20f69cf96e19574a1f292c3c9b885beca2505a239cefcd99d71867cf7c2b8655c4be356965ef1a80c2d992953d4bd2553660d80a2934f2166ded',
-		fileSize: 722795,
-	},
-]
-
-const linkData: MediaLinkData[] = [
-	{
-		linkTitle: 'Google',
-		linkUrl: 'www.google.com',
-	},
-	{
-		linkTitle: 'Facebook',
-		linkUrl: 'www.facebook.com',
-	},
-	{
-		linkTitle: 'Apple',
-		linkUrl: 'www.apple.com',
-	},
-]
