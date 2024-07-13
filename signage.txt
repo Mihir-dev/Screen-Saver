@@ -1,0 +1,311 @@
+import {
+	AddLinkPopup,
+	AllMediaIcon,
+	Button,
+	DeletePopupDS,
+	DustbinIcon,
+	GenericPopup,
+	ImageIcon,
+	ImageTileDS,
+	InfoIcon,
+	LinkDSIcon,
+	LinkTileDS,
+	PreviewerDS,
+	VideoTileDS,
+	YtVideoIcon,
+} from '@jiomeet/ui'
+import '@jiomeet/ui/styles.css'
+
+import {
+	useSignageAPI,
+	useSignageUtils,
+} from 'src/components/signage/signage.hooks'
+import { showToast } from 'src/utils'
+function Signage() {
+	const {
+		t,
+		tailwindTheme,
+		deletePopupState,
+		mediaType,
+		mediaText,
+		mediaName,
+		setDeletePopup,
+		addLinkPopup,
+		setAddLinkPopup,
+		allMediaList,
+		setAllMediaList,
+		previewPopupState,
+		previewIndex,
+		imagePreviewer,
+		setPreviewState,
+	} = useSignageUtils()
+
+	const {
+		imageList,
+		imageFileInputRef,
+		handleAddImage,
+		handleImageFileChange,
+		videoFileInputRef,
+		handleAddVideo,
+		handleVideoFileChange,
+		uploadLinkAPI,
+		linkList,
+		deleteMediaAPI,
+		deleteAllMediaAPI,
+		usedStorage,
+		videoList,
+	} = useSignageAPI()
+
+	return (
+		<>
+			<div className="font-jiotypemedium flex h-full max-h-full  flex-col overflow-hidden   ">
+				<div className="flex items-center justify-between">
+					<p className=" text-body-m-bold text-grey-100">{t('upload_media')}</p>
+
+					<div className="space-x-s flex items-center">
+						<div
+							onClick={() => setAllMediaList((prev) => !prev)}
+							tabIndex={0}
+							onBlur={() => setAllMediaList(false)}
+							className="space-x-xxs text-body-s-bold px-s py-xxs rounded-pill text-grey-100 relative flex min-w-[126px] cursor-pointer items-center justify-center bg-orange-50">
+							<AllMediaIcon />
+							<p>{t('add_media')}</p>
+							<input
+								hidden
+								type="file"
+								accept="image/jpeg"
+								ref={imageFileInputRef}
+								onChange={handleImageFileChange}
+							/>
+							<input
+								hidden
+								type="file"
+								accept="video/mp4"
+								ref={videoFileInputRef}
+								onChange={handleVideoFileChange}
+							/>
+							{allMediaList && (
+								<div className="bg-grey-20 border-grey-40 rounded-ml absolute right-[0] top-full z-20 mt-[2px] w-full cursor-pointer overflow-hidden border">
+									<div
+										className="p-s hover:bg-grey-40 space-x-s group flex items-center"
+										onClick={handleAddImage}>
+										<ImageIcon color="white" />
+										<p className=" text-body-s">{t('image')}</p>
+									</div>
+									<div
+										className="p-s hover:bg-grey-40  space-x-s flex items-center"
+										onClick={handleAddVideo}>
+										<YtVideoIcon color="white" />
+										<p className=" text-body-s">{t('video')}</p>
+									</div>
+									<div
+										onClick={() => setAddLinkPopup(true)}
+										className="p-s hover:bg-grey-40  space-x-s flex items-center">
+										<LinkDSIcon color="white" />
+										<p className=" text-body-s">{t('link')}</p>
+									</div>
+								</div>
+							)}
+						</div>
+						<Button
+							onClick={() =>
+								setDeletePopup({
+									deletePopupState: true,
+									mediaText: 'all media',
+									mediaType: 'im',
+									mediaName: '',
+								})
+							}
+							className="space-x-xxs px-s py-xxs  flex items-center ">
+							<DustbinIcon
+								width="16"
+								height="16"
+								color={tailwindTheme.tailwindConfiguration?.colors?.red[70]}
+							/>
+							<p className="text-red-70 text-body-s-bold">{t('delete_all')}</p>
+						</Button>
+					</div>
+				</div>
+				<div className="mt-m  flex max-h-[calc(100%-59px)] grow flex-col justify-between">
+					{imageList.length === 0 &&
+					linkList.length === 0 &&
+					videoList.length === 0 ? (
+						<div className="flex h-full w-full items-center justify-center">
+							<p className=" text-heading-l text-grey-60">
+								{t('no_media_uploaded')}
+							</p>
+						</div>
+					) : (
+						<div className="gap-base scrollbar-thin scrollbar-thumb-rounded-pill scrollbar-thumb-grey-100/[0.15] pr-xxs grid   grid-cols-4 overflow-auto rounded-md ">
+							{imageList.map(({ imageName, imageUrl }, i) => (
+								<ImageTileDS
+									previewFn={() =>
+										setPreviewState({
+											previewPopupState: true,
+											previewIndex: i,
+											imagePreviewer: true,
+										})
+									}
+									key={imageName}
+									deleteFn={({
+										deletePopupState,
+										mediaText,
+										mediaType,
+										mediaName,
+									}) =>
+										setDeletePopup({
+											deletePopupState,
+											mediaText,
+											mediaType,
+											mediaName,
+										})
+									}
+									id={imageName}
+									url={imageUrl}
+								/>
+							))}
+
+							{videoList.map(({ videoName, videoUrl }, i) => (
+								<VideoTileDS
+									previewFn={() =>
+										setPreviewState({
+											previewPopupState: true,
+											previewIndex: i,
+											imagePreviewer: false,
+										})
+									}
+									key={videoName}
+									url={videoUrl}
+									id={videoName}
+									deleteFn={({
+										deletePopupState,
+										mediaText,
+										mediaType,
+										mediaName,
+									}) =>
+										setDeletePopup({
+											deletePopupState,
+											mediaText,
+											mediaType,
+											mediaName,
+										})
+									}
+								/>
+							))}
+
+							{linkList.map(({ linkTitle, linkUrl }) => (
+								<LinkTileDS
+									key={linkUrl}
+									deleteFn={({
+										deletePopupState,
+										mediaText,
+										mediaType,
+										mediaName,
+									}) =>
+										setDeletePopup({
+											deletePopupState,
+											mediaText,
+											mediaType,
+											mediaName,
+										})
+									}
+									id={linkTitle}
+									url={linkUrl}
+								/>
+							))}
+						</div>
+					)}
+
+					<div className="pt-m flex items-center justify-between pb-[2px]">
+						<div className="self-end">
+							<div className="space-x-xxs flex items-center ">
+								<InfoIcon height="24" width="24" />
+								<p className=" text-body-s-bold text-grey-80">
+									{t('signage_redirecting_text')}
+								</p>
+							</div>
+						</div>
+
+						<div className=" space-y-base">
+							<div className="text-body-s flex items-center justify-between">
+								<p className=" text-grey-80">{t('used_space')}</p>
+								<p className="text-orange-60">{`${usedStorage} MB of 500 MB`}</p>
+							</div>
+
+							<div
+								style={{
+									background: `linear-gradient(to right, rgba(244, 143, 62, 1) ${usedStorage / 5}%, rgba(90, 90, 90, 1) ${usedStorage / 5}%)`,
+								}}
+								className="h-xs w-[326px] rounded-md"
+							/>
+						</div>
+					</div>
+				</div>
+			</div>
+			{deletePopupState && (
+				<GenericPopup
+					closePopup={() =>
+						setDeletePopup((prevState) => ({
+							...prevState,
+							deletePopupState: false,
+						}))
+					}>
+					<DeletePopupDS
+						deleteFn={() => {
+							mediaText === 'all media'
+								? deleteAllMediaAPI.mutate()
+								: deleteMediaAPI.mutate({
+										mediaName: mediaName,
+										mediaType: mediaType,
+									})
+
+							setDeletePopup((prevState) => ({
+								...prevState,
+								deletePopupState: false,
+							}))
+						}}
+						media={mediaText}
+						cancelFn={() => {
+							setDeletePopup((prevState) => ({
+								...prevState,
+								deletePopupState: false,
+							}))
+						}}
+					/>
+				</GenericPopup>
+			)}
+			{addLinkPopup && (
+				<GenericPopup
+					widthClass="w-[480px]"
+					closePopup={() => setAddLinkPopup(false)}>
+					<AddLinkPopup
+						errorPopup={(info) => showToast('app_name', info, true)}
+						addLinkFn={(linkData) => {
+							uploadLinkAPI.mutate(linkData)
+							setAddLinkPopup(false)
+						}}
+						closeFn={() => setAddLinkPopup(false)}
+					/>
+				</GenericPopup>
+			)}
+			{previewPopupState && (
+				<PreviewerDS
+					previewIndex={previewIndex}
+					imagePreviewer={imagePreviewer}
+					closeFn={() =>
+						setPreviewState({
+							previewPopupState: false,
+							previewIndex: 0,
+							imagePreviewer: true,
+						})
+					}
+					imageList={imageList}
+					videoList={videoList}
+					singularPreview={false}
+				/>
+			)}
+		</>
+	)
+}
+
+export default Signage

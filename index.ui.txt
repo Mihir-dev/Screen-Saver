@@ -14,6 +14,7 @@ export { AccordionTextEditableEncrypt } from 'src/components/Dashboard/accordion
 export { AddDeviceCard } from 'src/components/Dashboard/addDeviceCard'
 export { AppsAccordion } from 'src/components/Dashboard/appsAccordion'
 export { ScreenSaverAccordion } from 'src/components/Dashboard/screenSaverAccordion'
+export { SequencePreviewerSS } from 'src/components/Dashboard/sequencePreviewer'
 export { SequenceTileSS } from 'src/components/Dashboard/sequenceTileSS'
 
 export { DeletePopupDS } from 'src/components/Dashboard/deletePopupDS'

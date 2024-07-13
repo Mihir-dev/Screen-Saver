@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AccordionTextDrop } from 'src/components/Dashboard/accordionTextDrop'
-import { ImageTileSS } from 'src/components/Dashboard/imageTIleSS'
-import { LinkTileSS } from 'src/components/Dashboard/linkTileSS'
-import { VideoTileSS } from 'src/components/Dashboard/videoTileSS'
+import { ImageTileDS } from 'src/components/Dashboard/imageTileDS'
+import { LinkTileDS } from 'src/components/Dashboard/linkTileDS'
+import { VideoTileDS } from 'src/components/Dashboard/videoTileDS'
 import { DropdownIcon } from 'src/components/icons/drop_down-icon'
 
 interface fileInterface {
@@ -14,11 +14,7 @@ interface fileInterface {
 	endTime: string
 }
 
-export const SequenceTileSS = ({
-	fileData,
-	sequenceNo,
-	updateDateTime,
-}: {
+interface SequenceTileSSProps {
 	fileData: fileInterface
 	sequenceNo: number
 	updateDateTime: (data: {
@@ -26,7 +22,17 @@ export const SequenceTileSS = ({
 		newStartTime: string
 		newEndTime: string
 	}) => void
-}) => {
+	deleteSequence: (index: number) => void
+	previewFn: () => void
+}
+
+export const SequenceTileSS = ({
+	fileData,
+	sequenceNo,
+	updateDateTime,
+	deleteSequence,
+	previewFn,
+}: SequenceTileSSProps) => {
 	const timeArray = [
 		'00:00',
 		'01:00',
@@ -126,30 +132,27 @@ export const SequenceTileSS = ({
 	return (
 		<div id="rs-tile" className="space-y-xxs">
 			{fileData.fileType === 'im' && (
-				<ImageTileSS
-					dragStart={({ url }) => alert(url)}
+				<ImageTileDS
 					id="1"
-					previewFn={() => alert('lol')}
-					deleteFn={() => alert('Delete')}
+					previewFn={previewFn}
+					deleteFn={() => deleteSequence(sequenceNo)}
 					url={fileData.fileUrl}
 				/>
 			)}
 
 			{fileData.fileType === 'vd' && (
-				<VideoTileSS
-					dragStart={({ url }) => alert(url)}
+				<VideoTileDS
 					id="2"
-					previewFn={() => alert('lol')}
-					deleteFn={() => alert('Delete')}
+					previewFn={previewFn}
+					deleteFn={() => deleteSequence(sequenceNo)}
 					url={fileData.fileUrl}
 				/>
 			)}
 
 			{fileData.fileType === 'lk' && (
-				<LinkTileSS
-					dragStart={({ url }) => alert(url)}
+				<LinkTileDS
 					id={fileData.fileName}
-					deleteFn={() => alert('delete')}
+					deleteFn={() => deleteSequence(sequenceNo)}
 					url={fileData.fileUrl}
 				/>
 			)}

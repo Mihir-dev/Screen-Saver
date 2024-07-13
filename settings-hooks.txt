@@ -106,6 +106,16 @@ export const useSettingsConfig = (
 
 	const queryClient = useQueryClient()
 
+	const {
+		data: mediaData,
+		isPending: mediaDataLoading,
+		isSuccess: mediaDataSuccess,
+		isError: mediaDataError,
+	} = useQuery({
+		queryFn: () => fetchAllSignageMediaData(),
+		queryKey: ['signageMediaData'],
+	})
+
 	const fetchSettingsConfig = useMutation({
 		mutationFn: () => fetchAllSettingsConfig(hubDeviceId),
 		onSuccess: (data) => {
@@ -131,6 +141,7 @@ export const useSettingsConfig = (
 		mutationFn: () => updateSettingsConfigAPI(hubDeviceId, settingsConfig),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['settingsConfig'] })
+			queryClient.invalidateQueries({ queryKey: ['signageMediaData'] })
 			Emitter.emit(EMITTER_CONSTANT.ShowLoader, false)
 			showToast('app_name', 'settings_updated', false)
 			setSettingsSaved(true)
@@ -150,6 +161,7 @@ export const useSettingsConfig = (
 	const refreshSettingsConfig = () => {
 		Emitter.emit(EMITTER_CONSTANT.ShowLoader, true)
 		fetchSettingsConfig.mutate()
+		queryClient.invalidateQueries({ queryKey: ['signageMediaData'] })
 	}
 
 	useEffect(() => {
@@ -162,16 +174,6 @@ export const useSettingsConfig = (
 	const [imageList, setImageList] = useState<MediaImageData[]>([])
 	const [linkList, setLinkList] = useState<MediaLinkData[]>([])
 	const [videoList, setVideoList] = useState<MediaVideoData[]>([])
-
-	const {
-		data: mediaData,
-		isPending: mediaDataLoading,
-		isSuccess: mediaDataSuccess,
-		isError: mediaDataError,
-	} = useQuery({
-		queryFn: () => fetchAllSignageMediaData(),
-		queryKey: ['signageMediaData'],
-	})
 
 	useEffect(() => {
 		if (mediaData) {

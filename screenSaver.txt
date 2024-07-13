@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ImageTileSS } from 'src/components/Dashboard/imageTIleSS'
 import { LinkTileSS } from 'src/components/Dashboard/linkTileSS'
 import { PreviewerDS } from 'src/components/Dashboard/previewerDS'
+import { SequencePreviewerSS } from 'src/components/Dashboard/sequencePreviewer'
 import { SequenceTileSS } from 'src/components/Dashboard/sequenceTileSS'
 import { VideoTileSS } from 'src/components/Dashboard/videoTileSS'
 import { ComputerIcon } from 'src/components/icons/computer_icon'
@@ -22,6 +23,7 @@ interface ScreenSaverAccordionProps {
 	videoList: MediaVideoData[]
 	state: ScreenSaverConfig
 	dispatch: React.Dispatch<SettingsAction>
+	redirectSignage: () => void
 }
 
 export const ScreenSaverAccordion = ({
@@ -30,6 +32,7 @@ export const ScreenSaverAccordion = ({
 	videoList,
 	state,
 	dispatch,
+	redirectSignage,
 }: ScreenSaverAccordionProps) => {
 	const [opened, setOpened] = useState(false)
 	const [display, setDisplay] = useState<'display1' | 'display2'>('display1')
@@ -86,6 +89,19 @@ export const ScreenSaverAccordion = ({
 		defaultSSPreviewPopupState: false,
 		defaultSSPreviewIndex: 0,
 		defaultSSPImagePreviewer: false,
+	})
+
+	const [
+		{ sequenceSSPreviewPopupState, sequenceSSPreviewIndex, sequenceMediaName },
+		setSequenceSSPPreviewState,
+	] = useState<{
+		sequenceSSPreviewPopupState: boolean
+		sequenceSSPreviewIndex: number
+		sequenceMediaName: string
+	}>({
+		sequenceSSPreviewPopupState: false,
+		sequenceSSPreviewIndex: 0,
+		sequenceMediaName: '',
 	})
 
 	const handleOnDrag = (
@@ -305,6 +321,40 @@ export const ScreenSaverAccordion = ({
 		}
 	}
 
+	const deleteSequenceTime = (index: number) => {
+		const updatedScreenSavers = [...sequenceScreenSavers]
+		updatedScreenSavers.splice(index, 1)
+		setSequenceScreenSavers(updatedScreenSavers)
+
+		if (display === 'display1') {
+			dispatch({
+				type: 'UPDATE_SCREEN_SAVER',
+				payload: {
+					display1: updatedScreenSavers.map((seq) => ({
+						mediaName: seq.fileName,
+						mediaType: seq.fileType,
+						mediaUrl: seq.fileUrl,
+						startTime: seq.startTime,
+						endTime: seq.endTime,
+					})),
+				},
+			})
+		} else if (display === 'display2') {
+			dispatch({
+				type: 'UPDATE_SCREEN_SAVER',
+				payload: {
+					display2: updatedScreenSavers.map((seq) => ({
+						mediaName: seq.fileName,
+						mediaType: seq.fileType,
+						mediaUrl: seq.fileUrl,
+						startTime: seq.startTime,
+						endTime: seq.endTime,
+					})),
+				},
+			})
+		}
+	}
+
 	return (
 		<>
 			<div
@@ -340,65 +390,97 @@ export const ScreenSaverAccordion = ({
 							</div>
 						</div>
 						<div className="gap-s grid h-[557px] max-h-[557px] grid-cols-2">
-							<div className="bg-blur-50 rounded-ml py-s space-y-base  h-[557px] max-h-[557px]  ">
-								<p className="text-body-xs-bold px-s">
-									Available screensavers in your device
-								</p>
-
-								<div className="scrollbar-none  max-h-[497px] overflow-auto">
-									<div
-										id="draggble-divs"
-										className="gap-base px-s relative grid grid-cols-2 overflow-hidden py-[2px] ">
-										{imageList.map(({ imageName, imageUrl }, i) => (
-											<ImageTileSS
-												dragStart={({ e, url, fileName }) =>
-													handleOnDrag(e, url, fileName, 'im')
-												}
-												key={imageName}
-												id={imageName.toString()}
-												previewFn={() =>
-													setAvailSSPPreviewState({
-														availSSPreviewPopupState: true,
-														availSSPreviewIndex: i,
-														availSSPImagePreviewer: true,
-													})
-												}
-												deleteFn={() => alert('Delete')}
-												url={imageUrl}
-											/>
-										))}
-										{videoList.map(({ videoName, videoUrl }, i) => (
-											<VideoTileSS
-												dragStart={({ e, url, fileName }) =>
-													handleOnDrag(e, url, fileName, 'vd')
-												}
-												key={videoName}
-												id={videoName.toString()}
-												previewFn={() =>
-													setAvailSSPPreviewState({
-														availSSPreviewPopupState: true,
-														availSSPreviewIndex: i,
-														availSSPImagePreviewer: false,
-													})
-												}
-												deleteFn={() => alert('Delete')}
-												url={videoUrl}
-											/>
-										))}
-										{linkList.map(({ linkTitle, linkUrl }) => (
-											<LinkTileSS
-												dragStart={({ e, url, fileName }) =>
-													handleOnDrag(e, url, fileName, 'lk')
-												}
-												key={linkUrl}
-												deleteFn={() => alert('Delete')}
-												id={linkTitle}
-												url={linkUrl}
-											/>
-										))}
+							{imageList.length === 0 &&
+							videoList.length === 0 &&
+							linkList.length === 0 ? (
+								<div className="p-s bg-blur-50 rounded-ml space-y-base flex h-full w-full flex-col">
+									<p className="text-body-xs-bold">
+										Available screensavers in your device
+									</p>
+									<div className="flex flex-1 items-center justify-center">
+										<div className="space-y-xs flex flex-col items-center">
+											<ImageIcon height="24" width="24" color="#A1A1A1" />
+											<div className="text-center">
+												<p className="text-body-xxs text-grey-60">
+													No screensavers found.
+												</p>
+												<p className="text-body-xxs text-grey-60">
+													To upload screensavers go to{' '}
+													<span
+														onClick={redirectSignage}
+														className="text-orange-60 text-body-xxs-link cursor-pointer">
+														Digital Signage Tab
+													</span>
+												</p>
+											</div>
+										</div>
 									</div>
 								</div>
-							</div>
+							) : (
+								<div className="bg-blur-50 rounded-ml py-s space-y-base  h-[557px] max-h-[557px]  ">
+									<p className="text-body-xs-bold px-s">
+										Available screensavers in your device
+									</p>
+
+									<div className="scrollbar-none  max-h-[497px] overflow-auto">
+										<div
+											id="draggble-divs"
+											className="gap-base px-s relative grid grid-cols-2 overflow-hidden py-[2px] ">
+											{imageList.map(({ imageName, imageUrl }, i) => (
+												<ImageTileSS
+													defaultSS={false}
+													dragStart={({ e, url, fileName }) =>
+														handleOnDrag(e, url, fileName, 'im')
+													}
+													key={imageName}
+													id={imageName.toString()}
+													previewFn={() =>
+														setAvailSSPPreviewState({
+															availSSPreviewPopupState: true,
+															availSSPreviewIndex: i,
+															availSSPImagePreviewer: true,
+														})
+													}
+													deleteFn={() => alert('Delete')}
+													url={imageUrl}
+												/>
+											))}
+											{videoList.map(({ videoName, videoUrl }, i) => (
+												<VideoTileSS
+													defaultSS={false}
+													dragStart={({ e, url, fileName }) =>
+														handleOnDrag(e, url, fileName, 'vd')
+													}
+													key={videoName}
+													id={videoName.toString()}
+													previewFn={() =>
+														setAvailSSPPreviewState({
+															availSSPreviewPopupState: true,
+															availSSPreviewIndex: i,
+															availSSPImagePreviewer: false,
+														})
+													}
+													deleteFn={() => alert('Delete')}
+													url={videoUrl}
+												/>
+											))}
+											{linkList.map(({ linkTitle, linkUrl }) => (
+												<LinkTileSS
+													defaultSS={false}
+													dragStart={({ e, url, fileName }) =>
+														handleOnDrag(e, url, fileName, 'lk')
+													}
+													key={linkUrl}
+													deleteFn={() => alert('Delete')}
+													id={linkTitle}
+													url={linkUrl}
+												/>
+											))}
+										</div>
+									</div>
+								</div>
+							)}
+
 							<div className="bg-background-100/80 rounded-ml py-s space-y-base flex h-[557px] max-h-[557px] flex-col">
 								<div className="space-y-base px-s">
 									<p className="text-body-xs-bold">Default screensaver</p>
@@ -414,6 +496,7 @@ export const ScreenSaverAccordion = ({
 												<>
 													{defaultScreenSaver.fileType === 'im' && (
 														<ImageTileSS
+															defaultSS={true}
 															dragStart={({ e, url, fileName }) =>
 																handleOnDrag(e, url, fileName, 'im')
 															}
@@ -432,6 +515,7 @@ export const ScreenSaverAccordion = ({
 
 													{defaultScreenSaver.fileType === 'vd' && (
 														<VideoTileSS
+															defaultSS={true}
 															dragStart={({ e, url, fileName }) =>
 																handleOnDrag(e, url, fileName, 'vd')
 															}
@@ -450,6 +534,7 @@ export const ScreenSaverAccordion = ({
 
 													{defaultScreenSaver.fileType === 'lk' && (
 														<LinkTileSS
+															defaultSS={true}
 															dragStart={({ e, url, fileName }) =>
 																handleOnDrag(e, url, fileName, 'lk')
 															}
@@ -511,6 +596,14 @@ export const ScreenSaverAccordion = ({
 														key={i}
 														sequenceNo={i}
 														updateDateTime={updateSequenceTime}
+														deleteSequence={deleteSequenceTime}
+														previewFn={() => {
+															setSequenceSSPPreviewState({
+																sequenceSSPreviewPopupState: true,
+																sequenceSSPreviewIndex: 0,
+																sequenceMediaName: fileData.fileName,
+															})
+														}}
 													/>
 												))}
 											</div>
@@ -545,10 +638,12 @@ export const ScreenSaverAccordion = ({
 					}
 					imageList={imageList}
 					videoList={videoList}
+					singularPreview={false}
 				/>
 			)}
 			{defaultSSPreviewPopupState && (
 				<PreviewerDS
+					singularPreview={true}
 					previewIndex={defaultSSPreviewIndex}
 					imagePreviewer={defaultSSPImagePreviewer}
 					closeFn={() =>
@@ -579,6 +674,21 @@ export const ScreenSaverAccordion = ({
 										videoUrl: defaultScreenSaver.fileUrl,
 									},
 								]
+					}
+				/>
+			)}
+
+			{sequenceSSPreviewPopupState && (
+				<SequencePreviewerSS
+					sequenceScreenSaver={sequenceScreenSavers}
+					mediaName={sequenceMediaName}
+					previewIndex={sequenceSSPreviewIndex}
+					closeFn={() =>
+						setSequenceSSPPreviewState({
+							sequenceSSPreviewPopupState: false,
+							sequenceSSPreviewIndex: 0,
+							sequenceMediaName: '',
+						})
 					}
 				/>
 			)}

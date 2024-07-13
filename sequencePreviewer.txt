@@ -1,0 +1,151 @@
+import { useEffect, useState } from 'react'
+import { BackwardIcon } from 'src/components/icons/backward_icon'
+import { ForwardIconDS } from 'src/components/icons/fowardIconDS_icon'
+import { RoundedCloseIcon } from 'src/components/icons/rounded_close_icon'
+
+export interface MediaImageData {
+	fileSize: number
+	imageName: string
+	imageUrl: string
+}
+export interface MediaVideoData {
+	fileSize: number
+	videoName: string
+	videoUrl: string
+}
+
+interface CombinedList {
+	fileSize: number
+	type: boolean
+	fileName: string
+	fileUrl: string
+}
+
+interface SequenceScreenSaver {
+	fileSize: number
+	fileName: string
+	fileUrl: string
+	fileType: 'im' | 'vd' | 'lk'
+	startTime: string
+	endTime: string
+}
+
+interface SequencePreviewerSSProps {
+	closeFn: () => void
+	previewIndex: number
+	mediaName?: string
+	sequenceScreenSaver: SequenceScreenSaver[]
+}
+
+export const SequencePreviewerSS = ({
+	closeFn,
+	previewIndex,
+	mediaName,
+	sequenceScreenSaver,
+}: SequencePreviewerSSProps) => {
+	const [currentIndex, setCurrentIndex] = useState(previewIndex)
+	const [combinedList, setCombinedList] = useState<CombinedList[]>([])
+
+	useEffect(() => {
+		if (sequenceScreenSaver && sequenceScreenSaver.length > 0) {
+			const latestList: CombinedList[] = sequenceScreenSaver
+				.filter((data) => data.fileType === 'im' || data.fileType === 'vd')
+				.map((data) => ({
+					fileSize: data.fileSize,
+					type: data.fileType === 'im',
+					fileName: data.fileName,
+					fileUrl: data.fileUrl,
+				}))
+
+			const uniqueMediaNames = new Set()
+			const uniqueLatestList = latestList.filter((data) => {
+				if (!uniqueMediaNames.has(data.fileName)) {
+					uniqueMediaNames.add(data.fileName)
+					return true
+				}
+				return false
+			})
+			setCombinedList(uniqueLatestList)
+		}
+	}, [sequenceScreenSaver])
+
+	useEffect(() => {
+		if (combinedList.length > 0) {
+			const latestIndex = combinedList.findIndex(
+				(data) => data.fileName === mediaName,
+			)
+			setCurrentIndex(latestIndex)
+		}
+	}, [combinedList, mediaName, previewIndex])
+
+	const handlePrev = () => {
+		setCurrentIndex((prevIndex) =>
+			prevIndex === 0 ? combinedList.length - 1 : prevIndex - 1,
+		)
+	}
+
+	const handleNext = () => {
+		setCurrentIndex((prevIndex) =>
+			prevIndex === combinedList.length - 1 ? 0 : prevIndex + 1,
+		)
+	}
+
+	return (
+		<div className="fixed inset-[0] z-50 flex h-screen w-screen items-center justify-center bg-[#595959]/60">
+			<div className="space-x-xs overflow-none flex h-[90vh] max-h-[90vh] w-[70vw] flex-initial ">
+				<div className=" rounded-ml flex h-full w-full flex-col ">
+					<div className=" bg-grey-20 rounded-t-ml border-b-grey-40 flex flex-1 items-center justify-center overflow-hidden border-b">
+						{combinedList[currentIndex]?.type ? (
+							<div
+								style={{
+									backgroundImage: `url(${combinedList[currentIndex]?.fileUrl})`,
+								}}
+								className="h-full max-h-full w-full bg-contain bg-center bg-no-repeat duration-500"
+							/>
+						) : (
+							<video
+								key={combinedList[currentIndex]?.fileName}
+								controls
+								className="h-full w-full">
+								<source
+									src={combinedList[currentIndex]?.fileUrl}
+									type="video/mp4"
+								/>
+								Your browser does not support the video tag.
+							</video>
+						)}
+					</div>
+
+					<div className="bg-grey-20   rounded-b-ml px-base flex items-center justify-between ">
+						<div className="py-xs space-y-xxs text-left">
+							<p className="text-body-xs-bold text-grey-100">
+								{combinedList[currentIndex]?.fileName}
+							</p>
+							<p className="text-body-xs text-grey-80">{`${currentIndex + 1} of ${combinedList.length}`}</p>
+						</div>
+						<div className="space-x-s py-base flex items-center">
+							<div
+								onClick={handlePrev}
+								className="border-grey-40 p-xs cursor-pointer rounded-[1000px] border">
+								<BackwardIcon width="16" height="16" />
+							</div>
+
+							<div
+								onClick={handleNext}
+								className="border-grey-40 p-xs cursor-pointer rounded-[1000px] border">
+								<ForwardIconDS width="16" height="16" />
+							</div>
+						</div>
+					</div>
+				</div>
+				<div className="">
+					<div
+						onClick={closeFn}
+						className="p-xs rounded-pill bg-background-100 cursor-pointer">
+						<RoundedCloseIcon />
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}

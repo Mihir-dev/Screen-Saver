@@ -80,6 +80,9 @@ export const GeneralSettings = ({
 					linkList={linkList}
 					state={settingsConfig.screenSaver}
 					dispatch={setSettingsConfig}
+					redirectSignage={() =>
+						handleMenuClick(ROUTER_CONSTANT.DigitalSignage)
+					}
 				/>
 			</div>
 			<div className="space-x-s text-body-s-bold mt-l flex justify-center">
